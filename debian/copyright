@@ -1,10 +1,10 @@
-Format: http://dep.debian.net/deps/dep5
-Upstream-Name: openstack-common
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: openstack-pkg-tools
 Source: git://anonscm.debian.org/openstack/openstack-pkg-tools.git
 
 Files: *
 Copyright: Thomas Goirand <zigo@debian.org>
-Copyright: Roland Mas <lolando@debian.org>
+	Roland Mas <lolando@debian.org>
 License: Apache-2
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
