@@ -1,0 +1,358 @@
+#!/bin/sh
+
+pkgos_gen_pass () {
+	i=$(dd if=/dev/random bs=64 count=1 2>|/dev/null | md5sum)
+	echo ${i% *}
+}
+
+# Sets a directive in a config file, eventually using a section name
+# Example calls:
+# pkgos_edit_config flavor keystone /etc/glance/glance-api.conf
+# pkgos_edit_config flavor keystone glance-api.conf paste_deploy
+# pkgos_edit_config auth_protocol ssh glance-api.conf keystone_authtoken
+# To be used in: postinst (make sure the file exists before call)
+pkgos_edit_config () {
+	local DIRECTIVE VALUE FILE SECTION TMP_FILE TMP_FILE2 TMP_FILE3 TMP_FILE4 NBR_LINES START_LINE NBR_LINE_SECTION END_FILE_NUM_LINES SHELL_SCRIPT_MODE
+	if [ "${1}" = "-sh" ] ; then
+		SHELL_SCRIPT_MODE="yes"
+		shift
+	fi
+	DIRECTIVE=${1}
+	VALUE=${2}
+	FILE=${3}
+	if [ ! -r "${3}" ] ; then
+		echo "pkgos_edit_config called with non readable file: ${3}"
+		exit 1
+	fi
+	if [ -z "${4}" ] && [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+	    sed -i -e 's|^[ \t#]*'${DIRECTIVE}'=.*|'${DIRECTIVE}'='${VALUE}'|' ${FILE}
+	    return
+	fi
+	SECTION=${4:-DEFAULT}
+	python -c "import configobj
+config=configobj.ConfigObj('${FILE}')
+config['${SECTION}']['${DIRECTIVE}']='${VALUE}'
+config.write()"
+}
+
+# Read the value of a directive in a config file
+# Example:
+# pkgos_get_config /etc/keystone/keystone.conf admin_token DEFAULT
+pkgos_get_config () {
+	local DIRECTIVE FILE SECTION SHELL_SCRIPT_MODE
+	if [ "${1}" = "-sh" ] ; then
+		SHELL_SCRIPT_MODE="yes"
+		shift
+	fi
+	FILE=${1}
+	DIRECTIVE=${2}
+	if [ ! -r ${FILE} ] ; then
+	    RET=""
+	    return
+	fi
+	if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+	    RET=`grep -E "^([ \t])*${DIRECTIVE}=" ${FILE} | cut -d"=" -f2`
+	    return
+	fi
+	SECTION=${3:-DEFAULT}
+	RET=$(python -c "import configobj
+config=configobj.ConfigObj('${FILE}')
+print config['${SECTION}']['${DIRECTIVE}']")
+}
+
+# Read the value of a directive in a config file,
+# then prompt the user about it.
+# Example (options in this order please...):
+# pkgos_read_config -r -sh /etc/keystone/keystone.conf auth_token keystone/auth-token DEFAULT
+# To be used in: config
+pkgos_read_config () {
+	local DIRECTIVE CONF_PATH DEBCONF_NAME VALUE SECTION FSET_SEEN SHELL_SCRIPT_MODE
+	if [ "${1}" = "-r" ] ; then
+		FSET_SEEN="yes"
+		shift
+	fi
+	if [ "${1}" = "-sh" ] ; then
+		SHELL_SCRIPT_MODE="yes"
+		shift
+	fi
+	CONF_PATH=${1}
+	DIRECTIVE=${2}
+	DEBCONF_NAME=${3}
+	SECTION=${4}
+	if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+		pkgos_get_config -sh ${CONF_PATH} ${DIRECTIVE}
+	else
+		if [ -n "${4}" ] ; then
+			pkgos_get_config ${CONF_PATH} ${DIRECTIVE} ${SECTION}
+		else
+			pkgos_get_config ${CONF_PATH} ${DIRECTIVE}
+		fi
+	fi
+	if [ -n "${RET}" ] ; then
+		db_set ${DEBCONF_NAME} ${RET}
+	fi
+	if [ "${FSET_SEEN}" = "yes" ] ; then
+		db_fset ${DEBCONF_NAME} seen false
+	fi
+	db_input high ${DEBCONF_NAME} || true
+	db_go
+	db_get ${DEBCONF_NAME}
+}
+
+# Read the connection directive from a config file
+# and fills the dbc_* variable accordingly,
+# then call dbconfig to do the actual configuration.
+# To be used in: config
+pkgos_dbc_read_conf () {
+	local ADDR BEFORE_AT AFTER_AT SERVER_PORT CONN_STRING PKG_NAME CONF_PATH PARSED_DB_TYPE PARSED_USER PARSED_PASS PARSED_DB_NAME PARSED_SERVER PARSED_PORT SHELL_SCRIPT_MODE
+	if [ "${1}" = "-sh" ] ; then
+		SHELL_SCRIPT_MODE="yes"
+		shift
+	fi
+	CONF_PATH=${1}
+	PKG_NAME=${2}
+	shift
+	shift
+	if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+	    CONN_DIRECTIVE=${1}
+	    shift
+	else
+	    CONN_SECTION=${1}
+	    CONN_DIRECTIVE=${2}
+	    shift
+	    shift
+	fi	    
+
+	db_fset ${PKG_NAME}/configure_db seen false
+	db_input high ${PKG_NAME}/configure_db || true
+	db_go || true
+	db_get ${PKG_NAME}/configure_db
+	if [ "$RET" = "true" ] && [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
+		. /usr/share/dbconfig-common/dpkg/config
+		if [ -e "${CONF_PATH}" ] ; then
+		    CONN_STRING=$(pkgos_get_config "${CONF_PATH}" "${CONN_DIRECTIVE}" "${CONN_SECTION}")
+		else
+		    CONN_STRING=""
+		fi
+		PARSED_DB_TYPE=${CONN_STRING%%:*}
+		# If we have an undefined SQL type, we go back to a more sane default (eg: SQLite)
+		case "${PARSED_DB_TYPE}" in
+			sqlite|mysql|pgsql)
+				;;
+			postgresql*)
+				PARSED_DB_TYPE=pgsql
+				;;
+			*)
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME}db"
+				PARSED_DB_TYPE="sqlite"
+				;;
+		esac
+		if [ "${PARSED_DB_TYPE}" = "sqlite" ] ; then
+			if [ "${CONN_STRING}" = "sqlite:///${PKG_NAME}.db" ] ; then
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME}db"
+			fi
+			PARSED_DB_PATH=${CONN_STRING#sqlite://}
+			if [ -z "${PARSED_DB_PATH}" ] ; then
+				PARSED_DB_PATH=/var/lib/${PKG_NAME}/${PKG_NAME}db
+			fi
+			dbc_basepath=`dirname "${PARSED_DB_PATH}"`
+			dbc_dbname=`basename "${PARSED_DB_PATH}"`
+			dbc_dbtypes="sqlite3, mysql, pgsql"
+		else
+			ADDR=${CONN_STRING#*sql://}
+			BEFORE_AT=${ADDR%%@*}
+			AFTER_AT=${ADDR#*@}
+			SERVER_PORT=${AFTER_AT%%/*}
+
+			PARSED_USER=${BEFORE_AT%%:*}
+			PARSED_PASS=${BEFORE_AT#*:}
+			PARSED_DB_NAME=${AFTER_AT#*/}
+			PARSED_SERVER=${SERVER_PORT%%:*}
+			case "${SERVER_PORT}" in
+			*:*)
+				PARSED_PORT=${SERVER_PORT#*:}
+				;;
+			*)
+				PARSED_PORT=""
+				;;
+			esac
+			if [ -n "${PARSED_USER}" ] && [ -n "${PARSED_PASS}" ] && [ -n "${PARSED_SERVER}" ] && [ -n "${PARSED_DB_NAME}" ] ; then
+				dbc_dbuser=${PARSED_USER}
+				dbc_dbpass=${PARSED_PASS}
+				dbc_dbserver=${PARSED_SERVER}
+				dbc_dbport=${PARSED_PORT}
+				dbc_dbname=${PARSED_DB_NAME}
+			fi
+			if [ "${PARSED_DB_TYPE}" = "mysql" ] ; then
+				dbc_dbtypes="mysql, pgsql, sqlite3"
+			else
+				dbc_dbtypes="pgsql, mysql, sqlite3"
+			fi
+			dbc_authmethod_user="password"
+		fi
+		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
+	fi
+}
+
+# Read values configured by dbconfig-common,
+# and set a connection directive accordingly
+# in a configuration file
+#
+# Caller should use something like this:
+# pkgos_dbc_postinst /etc/keystone/keystone.conf keystone connection $@
+# since dbc_go expect $@ as well.
+pkgos_dbc_postinst () {
+	local CONF_PATH CONF_DIR CONF_FNAME PKG_NAME SHELL_SCRIPT_MODE
+	if [ "${1}" = "-sh" ] ; then
+		SHELL_SCRIPT_MODE="yes"
+		shift
+	fi
+	CONF_PATH=${1}
+	PKG_NAME=${2}
+	shift
+	shift
+	if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+	    CONN_DIRECTIVE=${1}
+	    shift
+	else
+	    CONN_SECTION=${1}
+	    CONN_DIRECTIVE=${2}
+	    shift
+	    shift
+	fi	    
+
+	CONF_DIR=`dirname ${CONF_PATH}`
+	CONF_FNAME=`basename ${CONF_PATH}`
+
+	# Create config files if they don't exist
+	if [ ! -d ${CONF_DIR} ] ; then
+		mkdir -p ${CONF_DIR}
+	fi
+	chmod 0770 ${CONF_DIR}
+	chown ${PKG_NAME}:${PKG_NAME} ${CONF_DIR}
+	if [ ! -e ${CONF_PATH} ] ; then
+		install -D -m 0660 -o ${PKG_NAME} -g ${PKG_NAME} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME} ${CONF_PATH}
+	fi
+	db_get ${PKG_NAME}/configure_db
+	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
+		. /usr/share/dbconfig-common/dpkg/postinst
+		dbc_dbfile_owner="${PKG_NAME}:${PKG_NAME}"
+		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
+		if [ "$dbc_install" = "true" ] ; then
+			case "$dbc_dbtype" in
+				mysql)
+					if [ -n "$dbc_dbport" ] ; then
+						dbport=:$dbc_dbport
+					fi
+					SQL_CONNECTION="mysql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
+					;;
+				postgresql*|pgsql)
+					if [ -n "$dbc_dbport" ] ; then
+						dbport=:$dbc_dbport
+					fi
+					SQL_CONNECTION="postgresql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
+					;;
+				*)
+					SQL_CONNECTION="sqlite:///$dbc_basepath/$dbc_dbname"
+					;;
+			esac
+			if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+				pkgos_edit_config -sh "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}"
+			else
+				pkgos_edit_config "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}" "${CONN_SECTION}"
+			fi
+		fi
+	fi
+}
+
+# Reads auth_host, admin_tenant_name, admin_user and admin_password
+# values with debconf
+# Prototype: pkgos_read_admin_creds <conf-file> <PKG_NAME> <section>
+# Example calls:
+# pkgos_read_admin_creds /etc/glance/glance-api.conf glance keystone_authtoken
+# To be used in: config
+pkgos_read_admin_creds () {
+	local CONF_FNAME PKG_NAME SECTION
+	CONF_FNAME=${1}
+	PKG_NAME=${2}
+	SECTION=${3}
+
+	pkgos_read_config ${CONF_FNAME} auth_host         ${PKG_NAME}/auth-host         ${SECTION}
+        pkgos_read_config ${CONF_FNAME} admin_tenant_name ${PKG_NAME}/admin-tenant-name ${SECTION}
+        pkgos_read_config ${CONF_FNAME} admin_user        ${PKG_NAME}/admin-user        ${SECTION}
+        pkgos_read_config ${CONF_FNAME} admin_password    ${PKG_NAME}/admin-password    ${SECTION}
+}
+
+# To be used in: postinst
+pkgos_write_admin_creds () {
+	local CONF_FNAME PKG_NAME SECTION
+	CONF_FNAME=${1}
+	PKG_NAME=${2}
+	SECTION=${3}
+
+	db_get ${PKG_NAME}/auth-host
+	pkgos_edit_config auth_host "${RET}" ${CONF_FNAME} ${SECTION}
+	db_get ${PKG_NAME}/admin-tenant-name
+	pkgos_edit_config admin_tenant_name "${RET}" ${CONF_FNAME} ${SECTION}
+	db_get ${PKG_NAME}/admin-user
+	pkgos_edit_config admin_user "${RET}" ${CONF_FNAME} ${SECTION}
+	db_get ${PKG_NAME}/admin-password
+	pkgos_edit_config admin_password "${RET}" ${CONF_FNAME} ${SECTION}
+}
+
+pkgos_write_new_conf () {
+	local PKG_NAME CONF_FNAME
+	PKG_NAME=${1}
+	CONF_FNAME=${2}
+
+	SRC_PATH=/usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME}
+	DST_DIR=/etc/${PKG_NAME}
+	DST_PATH=${DST_DIR}/${CONF_FNAME}
+	if [ ! -d ${DST_DIR} ] ; then
+		mkdir -p ${DST_DIR}
+	fi
+	chmod 0750 ${DST_DIR}
+	chown ${PKG_NAME}:${PKG_NAME} ${DST_DIR}
+	if [ ! -e ${DST_PATH} ] ; then
+		install -D -m 640 -o ${PKG_NAME} -g ${PKG_NAME} ${SRC_PATH} ${DST_PATH}
+	fi
+}
+
+pkgos_var_user_group () {
+	local PKG_NAME
+	PKG_NAME=${1}
+
+	# Create user and groups if they don't exist
+	if ! getent group ${PKG_NAME} > /dev/null 2>&1 ; then
+		addgroup --quiet --system ${PKG_NAME}
+	fi
+	if ! getent passwd ${PKG_NAME} > /dev/null 2>&1 ; then
+		adduser --system \
+			--home /var/lib/${PKG_NAME} \
+			--no-create-home \
+			--quiet \
+			--disabled-password \
+			--shell /bin/bash \
+			--group ${PKG_NAME}
+	fi
+
+	# Create /var/{lib,log}/<package> with that user/group if it doesn't exist
+	if [ ! -d /var/lib/${PKG_NAME} ] ; then
+		mkdir -p /var/lib/${PKG_NAME}/cache
+	fi
+	chown -R ${PKG_NAME}:${PKG_NAME} /var/lib/${PKG_NAME}
+	chmod -R 0750 /var/lib/${PKG_NAME}
+	if [ ! -d /var/log/${PKG_NAME} ] ; then
+		mkdir -p /var/log/${PKG_NAME}
+	fi
+	chown ${PKG_NAME}:${PKG_NAME} /var/log/${PKG_NAME}
+	chmod 0750 /var/log/${PKG_NAME}
+}
+
+pkgos_init () {
+	INIT_SCRIPT_NAME=${1}
+	if [ -x /etc/init.d/${INIT_SCRIPT_NAME} ] ; then
+		update-rc.d ${INIT_SCRIPT_NAME} defaults >/dev/null
+		invoke-rc.d ${INIT_SCRIPT_NAME} start || true
+	fi
+}

@@ -1,0 +1,35 @@
+#!/usr/bin/make -f
+
+build-arch: build
+build-indep: build
+build:
+
+clean:
+	dh_testdir
+	dh_clean
+
+install:
+	dh_testdir
+	dh_testroot
+	dh_prep
+
+binary-indep: install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+	dh_install
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+get-vcs-source:
+	echo "Nothing to do here..."
+
+binary-arch: install
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

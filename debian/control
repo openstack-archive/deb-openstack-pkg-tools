@@ -1,0 +1,21 @@
+Source: openstack-pkg-tools
+Section: net
+Priority: extra
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Julien Danjou <acid@debian.org>,
+           Thomas Goirand <zigo@debian.org>,
+           Ghe Rivero <ghe.rivero@stackops.com>,
+           Mehdi Abaakouk <sileht@sileht.net>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.3
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/openstack-pkg-tools.git;a=summary
+Vcs-Git: git://anonscm.debian.org/openstack/openstack-pkg-tools.git
+Homepage: http://openstack.alioth.debian.org/
+
+Package: openstack-pkg-tools
+Architecture: any
+Depends: ${misc:Depends}
+Description: some packaging helper for Openstack
+ This package contains a set of scripts used by the Openstack packaging team in
+ order to avoid code redundancy. A normal user should never have to install
+ this package unless willing to rebuild some Openstack packages.

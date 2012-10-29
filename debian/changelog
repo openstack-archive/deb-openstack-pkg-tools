@@ -1,0 +1,5 @@
+openstack-pkg-tools (0.1) experimental; urgency=low
+
+  * Initial release.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 29 Oct 2012 14:38:41 +0000
