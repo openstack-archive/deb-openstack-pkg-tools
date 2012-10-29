@@ -1,5 +1,3 @@
-#!/bin/sh
-
 pkgos_gen_pass () {
 	i=$(dd if=/dev/random bs=64 count=1 2>|/dev/null | md5sum)
 	echo ${i% *}

@@ -1,5 +1,9 @@
-openstack-pkg-tools (0.1) experimental; urgency=low
+openstack-pkg-tools (1) experimental; urgency=low
 
-  * Initial release.
+  * New package meant to include code common to several Openstack packages.
+  * Added pkgos_func, a library of common shell functions for use in
+    maintainer scripts.
+  * Also added pkgos_insert_include, a mechanism to insert said functions
+    into maintainer scripts at package build time.
 
- -- Thomas Goirand <zigo@debian.org>  Mon, 29 Oct 2012 14:38:41 +0000
+ -- Roland Mas <roland@gnurandal.com>  Mon, 29 Oct 2012 14:19:25 +0100

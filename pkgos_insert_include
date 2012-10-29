@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+# Example call: pkgos_insert_include pkgos_func keystone.config
+INC=/usr/share/openstack-pkg-tools/${1}
+DST=debian/${2}
+SRC="debian/${2}.in"
+
+awk '{if ($1 == "#PKGOS-INCLUDE#") {
+print "### Start of included " G " library"
+while ((getline line < F) > 0) print line
+print "### End of included " G " library"
+} else print}' F=${INC} G=$(basename $INC) ${SRC} > ${DST}
