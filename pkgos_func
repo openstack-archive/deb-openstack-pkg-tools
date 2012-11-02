@@ -200,10 +200,17 @@ pkgos_dbc_read_conf () {
 # pkgos_dbc_postinst /etc/keystone/keystone.conf keystone connection $@
 # since dbc_go expect $@ as well.
 pkgos_dbc_postinst () {
-	local CONF_PATH CONF_DIR CONF_FNAME PKG_NAME SHELL_SCRIPT_MODE
+	local CONF_PATH CONF_DIR CONF_FNAME PKG_NAME SHELL_SCRIPT_MODE SUITE
 	if [ "${1}" = "-sh" ] ; then
 		SHELL_SCRIPT_MODE="yes"
 		shift
+	fi
+	if [ "${1}" = "--suite" ] ; then
+		SUITE=${2}
+		shift
+		shift
+	else
+		SUITE=${2}
 	fi
 	CONF_PATH=${1}
 	PKG_NAME=${2}
@@ -227,14 +234,14 @@ pkgos_dbc_postinst () {
 		mkdir -p ${CONF_DIR}
 	fi
 	chmod 0770 ${CONF_DIR}
-	chown ${PKG_NAME}:${PKG_NAME} ${CONF_DIR}
+	chown ${SUITE}:${SUITE} ${CONF_DIR}
 	if [ ! -e ${CONF_PATH} ] ; then
-		install -D -m 0660 -o ${PKG_NAME} -g ${PKG_NAME} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME} ${CONF_PATH}
+		install -D -m 0660 -o ${SUITE} -g ${SUITE} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME} ${CONF_PATH}
 	fi
 	db_get ${PKG_NAME}/configure_db
 	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
 		. /usr/share/dbconfig-common/dpkg/postinst
-		dbc_dbfile_owner="${PKG_NAME}:${PKG_NAME}"
+		dbc_dbfile_owner="${SUITE}:${SUITE}"
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
 		if [ "$dbc_install" = "true" ] ; then
 			case "$dbc_dbtype" in
