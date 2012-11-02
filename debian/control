@@ -2,7 +2,11 @@ Source: openstack-pkg-tools
 Section: devel
 Priority: extra
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
-Uploaders: Ghe Rivero <ghe@debian.org>, Roland Mas <lolando@debian.org>
+Uploaders: Julien Danjou <acid@debian.org>,
+           Thomas Goirand <zigo@debian.org>,
+           Ghe Rivero <ghe.rivero@stackops.com>,
+           Mehdi Abaakouk <sileht@sileht.net>,
+           Roland Mas <lolando@debian.org>
 Build-Depends: debhelper (>= 9)
 Standards-Version: 3.9.3
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/openstack-pkg-tools.git;a=summary
