@@ -141,17 +141,17 @@ pkgos_dbc_read_conf () {
 				PARSED_DB_TYPE=pgsql
 				;;
 			*)
-				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME}db"
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME//-/}db"
 				PARSED_DB_TYPE="sqlite"
 				;;
 		esac
 		if [ "${PARSED_DB_TYPE}" = "sqlite" ] ; then
 			if [ "${CONN_STRING}" = "sqlite:///${PKG_NAME}.db" ] ; then
-				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME}db"
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME//-/}db"
 			fi
 			PARSED_DB_PATH=${CONN_STRING#sqlite://}
 			if [ -z "${PARSED_DB_PATH}" ] ; then
-				PARSED_DB_PATH=/var/lib/${PKG_NAME}/${PKG_NAME}db
+				PARSED_DB_PATH=/var/lib/${PKG_NAME}/${PKG_NAME//-/}db
 			fi
 			dbc_basepath=`dirname "${PARSED_DB_PATH}"`
 			dbc_dbname=`basename "${PARSED_DB_PATH}"`
