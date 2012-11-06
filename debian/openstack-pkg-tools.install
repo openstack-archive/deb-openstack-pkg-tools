@@ -1,2 +1,3 @@
+pkgos.make /usr/share/openstack-pkg-tools
 pkgos_func /usr/share/openstack-pkg-tools
 pkgos_insert_include /usr/share/openstack-pkg-tools
