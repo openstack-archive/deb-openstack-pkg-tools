@@ -363,5 +363,5 @@ pkgos_init () {
 }
 
 pkgos_get_id () {
-    SERVICE_ENDPOINT=http://127.0.0.1:35357/v2.0/ SERVICE_TOKEN=${AUTH_TOKEN} "$@" | awk '/ id / { print $4 }'
+    SERVICE_ENDPOINT=${SERVICE_ENDPOINT:-http://127.0.0.1:35357/v2.0/} SERVICE_TOKEN=${AUTH_TOKEN} "$@" | awk '/ id / { print $4 }'
 }
