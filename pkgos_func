@@ -125,6 +125,7 @@ pkgos_dbc_read_conf () {
 	db_input high ${PKG_NAME}/configure_db || true
 	db_go || true
 	db_get ${PKG_NAME}/configure_db
+	DEFAULT_DBNAME=$(echo ${PKG_NAME}db | sed s/-//g)
 	if [ "$RET" = "true" ] && [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
 		. /usr/share/dbconfig-common/dpkg/config
 		if [ -e "${CONF_PATH}" ] ; then
@@ -141,17 +142,17 @@ pkgos_dbc_read_conf () {
 				PARSED_DB_TYPE=pgsql
 				;;
 			*)
-				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME//-/}db"
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${DEFAULT_DBNAME}"
 				PARSED_DB_TYPE="sqlite"
 				;;
 		esac
 		if [ "${PARSED_DB_TYPE}" = "sqlite" ] ; then
 			if [ "${CONN_STRING}" = "sqlite:///${PKG_NAME}.db" ] ; then
-				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${PKG_NAME//-/}db"
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${DEFAULT_DBNAME}"
 			fi
 			PARSED_DB_PATH=${CONN_STRING#sqlite://}
 			if [ -z "${PARSED_DB_PATH}" ] ; then
-				PARSED_DB_PATH=/var/lib/${PKG_NAME}/${PKG_NAME//-/}db
+				PARSED_DB_PATH=/var/lib/${PKG_NAME}/${DEFAULT_DBNAME}
 			fi
 			dbc_basepath=`dirname "${PARSED_DB_PATH}"`
 			dbc_dbname=`basename "${PARSED_DB_PATH}"`
