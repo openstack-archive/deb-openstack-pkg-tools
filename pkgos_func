@@ -313,6 +313,22 @@ pkgos_dbc_postinst () {
 	fi
 }
 
+# Read remote database values when we're not using dbconfig-common
+# Expects the prefix of the debconf questions as a parameter
+# e.g. pkgos_nodbc_config nova (since the questions are nova/remote_db_*)
+pkgos_nodbc_config () {
+    db_go
+    db_get nova/configure_db || true
+    if ! [ "$RET" = true ] ; then
+	db_input high nova/remote_db_type || true
+	db_input high nova/remote_db_host || true
+	db_input high nova/remote_db_port || true
+	db_input high nova/remote_db_user || true
+	db_input high nova/remote_db_pass || true
+	db_input high nova/remote_db_name || true
+    fi
+}
+
 # Reads auth_host, admin_tenant_name, admin_user and admin_password
 # values with debconf
 # Prototype: pkgos_read_admin_creds <conf-file> <PKG_NAME> <section>
