@@ -310,7 +310,7 @@ pkgos_dbc_postinst () {
 	    if [ -n "$RET" ] ; then
 		SQL_CONNECTION=${SQL_CONNECTION}:$RET
 	    fi
-	    db_get ${PKG_NAME}/remote_db_dbname
+	    db_get ${PKG_NAME}/remote_db_name
 	    SQL_CONNECTION=${SQL_CONNECTION}/$RET
 
 	    if [ -e "${CONF_PATH}" ] ; then
