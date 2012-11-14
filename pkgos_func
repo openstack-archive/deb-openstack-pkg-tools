@@ -240,7 +240,9 @@ pkgos_dbc_postinst () {
 		install -D -m 0660 -o ${SUITE} -g ${SUITE} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME} ${CONF_PATH}
 	fi
 	db_get ${PKG_NAME}/configure_db
-	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
+	if [ "$RET" = "true" ] ; then 
+	    # Configure database locally
+	    if [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
 		. /usr/share/dbconfig-common/dpkg/postinst
 		dbc_dbfile_owner="${SUITE}:${SUITE}"
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
@@ -268,6 +270,46 @@ pkgos_dbc_postinst () {
 				pkgos_edit_config "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}" "${CONN_SECTION}"
 			fi
 		fi
+	    fi
+	else
+	    # Configure remote database
+	    db_get ${PKG_NAME}/remote_db_type
+	    case "$RET" in
+		mysql)
+		    SQL_CONNECTION=mysql
+		    ;;
+		postgresql*|pgsql)
+		    SQL_CONNECTION=postgresql
+		    ;;
+		*)
+		    echo "Unknown database type"
+		    exit 1
+	    esac
+	    db_get ${PKG_NAME}/remote_db_user
+	    SQL_CONNECTION=${SQL_CONNECTION}://$RET
+	    db_get ${PKG_NAME}/remote_db_pass
+	    SQL_CONNECTION=${SQL_CONNECTION}:$RET
+	    db_get ${PKG_NAME}/remote_db_host
+	    SQL_CONNECTION=${SQL_CONNECTION}@$RET
+	    db_get ${PKG_NAME}/remote_db_port
+	    if [ -n "$RET" ] ; then
+		SQL_CONNECTION=${SQL_CONNECTION}:$RET
+	    fi
+	    db_get ${PKG_NAME}/remote_db_dbname
+	    SQL_CONNECTION=${SQL_CONNECTION}/$RET
+
+	    if [ -e "${CONF_PATH}" ] ; then
+		CURRENT_CONN_STRING=$(pkgos_get_config "${CONF_PATH}" "${CONN_DIRECTIVE}" "${CONN_SECTION}")
+	    else
+		CURRENT_CONN_STRING=""
+	    fi
+	    if [ "$SQL_CONNECTION" != "$CURRENT_CONN_STRING" ] ; then
+		if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
+		    pkgos_edit_config -sh "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}"
+		else
+		    pkgos_edit_config "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}" "${CONN_SECTION}"
+		fi
+	    fi
 	fi
 }
 
