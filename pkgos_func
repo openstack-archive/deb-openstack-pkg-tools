@@ -273,7 +273,12 @@ pkgos_dbc_postinst () {
 	    fi
 	else
 	    # Configure remote database
-	    db_get ${PKG_NAME}/remote_db_type
+	    v=0
+	    db_get ${PKG_NAME}/remote_db_type || v=$?
+	    if [ "$v" = 10 ] ; then
+		# No such question yet, returning
+		return
+	    fi
 	    case "$RET" in
 		mysql)
 		    SQL_CONNECTION=mysql
