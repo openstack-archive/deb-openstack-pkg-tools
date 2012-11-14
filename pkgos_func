@@ -126,7 +126,8 @@ pkgos_dbc_read_conf () {
 	db_go || true
 	db_get ${PKG_NAME}/configure_db
 	DEFAULT_DBNAME=$(echo ${PKG_NAME}db | sed s/-//g)
-	if [ "$RET" = "true" ] && [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
+	if [ "$RET" = "true" ] ; then
+	    if [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
 		. /usr/share/dbconfig-common/dpkg/config
 		if [ -e "${CONF_PATH}" ] ; then
 		    CONN_STRING=$(pkgos_get_config "${CONF_PATH}" "${CONN_DIRECTIVE}" "${CONN_SECTION}")
@@ -190,6 +191,15 @@ pkgos_dbc_read_conf () {
 			dbc_authmethod_user="password"
 		fi
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
+	    fi
+	else
+	    # If no dbconfig-common, then read data for remote database
+	    db_input high ${PKG_NAME}/remote_db_type || true
+	    db_input high ${PKG_NAME}/remote_db_host || true
+	    db_input high ${PKG_NAME}/remote_db_port || true
+	    db_input high ${PKG_NAME}/remote_db_user || true
+	    db_input high ${PKG_NAME}/remote_db_pass || true
+	    db_input high ${PKG_NAME}/remote_db_name || true
 	fi
 }
 
@@ -316,22 +326,6 @@ pkgos_dbc_postinst () {
 		fi
 	    fi
 	fi
-}
-
-# Read remote database values when we're not using dbconfig-common
-# Expects the prefix of the debconf questions as a parameter
-# e.g. pkgos_nodbc_config nova (since the questions are nova/remote_db_*)
-pkgos_nodbc_config () {
-    db_go
-    db_get nova/configure_db || true
-    if ! [ "$RET" = true ] ; then
-	db_input high nova/remote_db_type || true
-	db_input high nova/remote_db_host || true
-	db_input high nova/remote_db_port || true
-	db_input high nova/remote_db_user || true
-	db_input high nova/remote_db_pass || true
-	db_input high nova/remote_db_name || true
-    fi
 }
 
 # Reads auth_host, admin_tenant_name, admin_user and admin_password
