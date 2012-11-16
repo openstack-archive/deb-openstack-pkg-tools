@@ -20,6 +20,35 @@ get-vcs-source:
 		echo "No upstream branch: checking out" ; \
 		git checkout -b master upstream/master ; \
 	fi
-	git checkout debian/experimental
+	git checkout debian/$(DEBFLAVOR)
+
+display-po-stats:
+	cd $(CURDIR)/debian/po ; for i in *.po ; do \
+		echo -n $$i": " ; \
+		msgfmt -o /dev/null --statistic $$i ; \
+	done
+
+call-for-po-trans:
+	podebconf-report-po --call --withtranslators --languageteam
+
+regen-manifest-patch:
+	quilt pop -a || true
+	quilt push install-missing-files.patch
+	git checkout MANIFEST.in
+	git ls-files --no-empty-directory --exclude-standard cinder | grep -v '.py$$' | sed -n 's/.*/include &/gp' >> MANIFEST.in
+	quilt refresh
+	quilt pop -a
+
+override_dh_builddeb:
+	dh_builddeb -- -Zxz -z9
+
+override_dh_installinit:
+	if dpkg-vendor --derives-from ubuntu ; then \
+		for i in *.upstart.in ; do \
+			MYPKG=`echo $i | cut -d. -f1` ; \
+			cp $MYPKG.upstart.in $MYPKG.upstart ; \
+		done ; \
+        fi
+	dh_installinit --error-handler=true
 
 .PHONY: get-vcs-source
