@@ -51,4 +51,7 @@ override_dh_installinit:
         fi
 	dh_installinit --error-handler=true
 
+get-orig-source:
+	uscan --verbose --force-download --rename --destdir=../build-area
+
 .PHONY: get-vcs-source
