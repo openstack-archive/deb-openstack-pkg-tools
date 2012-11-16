@@ -126,8 +126,7 @@ pkgos_dbc_read_conf () {
 	db_go || true
 	db_get ${PKG_NAME}/configure_db
 	DEFAULT_DBNAME=$(echo ${PKG_NAME}db | sed s/-//g)
-	if [ "$RET" = "true" ] ; then
-	    if [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
+	if [ "$RET" = "true" ] && [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
 		. /usr/share/dbconfig-common/dpkg/config
 		if [ -e "${CONF_PATH}" ] ; then
 		    CONN_STRING=$(pkgos_get_config "${CONF_PATH}" "${CONN_DIRECTIVE}" "${CONN_SECTION}")
@@ -191,15 +190,6 @@ pkgos_dbc_read_conf () {
 			dbc_authmethod_user="password"
 		fi
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
-	    fi
-	else
-	    # If no dbconfig-common, then read data for remote database
-	    db_input high ${PKG_NAME}/remote_db_type || true
-	    db_input high ${PKG_NAME}/remote_db_host || true
-	    db_input high ${PKG_NAME}/remote_db_port || true
-	    db_input high ${PKG_NAME}/remote_db_user || true
-	    db_input high ${PKG_NAME}/remote_db_pass || true
-	    db_input high ${PKG_NAME}/remote_db_name || true
 	fi
 }
 
@@ -250,9 +240,7 @@ pkgos_dbc_postinst () {
 		install -D -m 0660 -o ${SUITE} -g ${SUITE} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME} ${CONF_PATH}
 	fi
 	db_get ${PKG_NAME}/configure_db
-	if [ "$RET" = "true" ] ; then 
-	    # Configure database locally
-	    if [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
+	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
 		. /usr/share/dbconfig-common/dpkg/postinst
 		dbc_dbfile_owner="${SUITE}:${SUITE}"
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
@@ -280,51 +268,6 @@ pkgos_dbc_postinst () {
 				pkgos_edit_config "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}" "${CONN_SECTION}"
 			fi
 		fi
-	    fi
-	else
-	    # Configure remote database
-	    v=0
-	    db_get ${PKG_NAME}/remote_db_type || v=$?
-	    if [ "$v" = 10 ] ; then
-		# No such question yet, returning
-		return
-	    fi
-	    case "$RET" in
-		mysql)
-		    SQL_CONNECTION=mysql
-		    ;;
-		postgresql*|pgsql)
-		    SQL_CONNECTION=postgresql
-		    ;;
-		*)
-		    echo "Unknown database type"
-		    exit 1
-	    esac
-	    db_get ${PKG_NAME}/remote_db_user
-	    SQL_CONNECTION=${SQL_CONNECTION}://$RET
-	    db_get ${PKG_NAME}/remote_db_pass
-	    SQL_CONNECTION=${SQL_CONNECTION}:$RET
-	    db_get ${PKG_NAME}/remote_db_host
-	    SQL_CONNECTION=${SQL_CONNECTION}@$RET
-	    db_get ${PKG_NAME}/remote_db_port
-	    if [ -n "$RET" ] ; then
-		SQL_CONNECTION=${SQL_CONNECTION}:$RET
-	    fi
-	    db_get ${PKG_NAME}/remote_db_name
-	    SQL_CONNECTION=${SQL_CONNECTION}/$RET
-
-	    if [ -e "${CONF_PATH}" ] ; then
-		CURRENT_CONN_STRING=$(pkgos_get_config "${CONF_PATH}" "${CONN_DIRECTIVE}" "${CONN_SECTION}")
-	    else
-		CURRENT_CONN_STRING=""
-	    fi
-	    if [ "$SQL_CONNECTION" != "$CURRENT_CONN_STRING" ] ; then
-		if [ "${SHELL_SCRIPT_MODE}" = "yes" ] ; then
-		    pkgos_edit_config -sh "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}"
-		else
-		    pkgos_edit_config "${CONN_DIRECTIVE}" "${SQL_CONNECTION}" "${CONF_PATH}" "${CONN_SECTION}"
-		fi
-	    fi
 	fi
 }
 
