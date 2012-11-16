@@ -3,8 +3,8 @@ Upstream-Name: openstack-pkg-tools
 Source: git://anonscm.debian.org/openstack/openstack-pkg-tools.git
 
 Files: *
-Copyright: Thomas Goirand <zigo@debian.org>
-	Roland Mas <lolando@debian.org>
+Copyright: 2012, Thomas Goirand <zigo@debian.org>
+	2012, Roland Mas <lolando@debian.org>
 License: Apache-2
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
