@@ -6,6 +6,7 @@ VERSION		?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*
 DEBFLAVOR	?= $(shell dpkg-parsechangelog | grep -E ^Distribution: | cut -d" " -f2)
 DEBPKGNAME	?= $(shell dpkg-parsechangelog | grep -E ^Source: | cut -d" " -f2)
 UPSTREAM_GIT	?= git://github.com/openstack/$(DEBPKGNAME).git
+MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 
 test:
 	echo $(UPSTREAM_GIT)
@@ -35,7 +36,7 @@ regen-manifest-patch:
 	quilt pop -a || true
 	quilt push install-missing-files.patch
 	git checkout MANIFEST.in
-	git ls-files --no-empty-directory --exclude-standard $(DEBPKGNAME) | grep -v '.py$$' | sed -n 's/.*/include &/gp' >> MANIFEST.in
+	git ls-files --no-empty-directory --exclude-standard $(MANIFEST_EXCLUDE_STANDARD) | grep -v '.py$$' | sed -n 's/.*/include &/gp' >> MANIFEST.in
 	quilt refresh
 	quilt pop -a
 
