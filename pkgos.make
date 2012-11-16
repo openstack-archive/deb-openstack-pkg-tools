@@ -35,7 +35,7 @@ regen-manifest-patch:
 	quilt pop -a || true
 	quilt push install-missing-files.patch
 	git checkout MANIFEST.in
-	git ls-files --no-empty-directory --exclude-standard cinder | grep -v '.py$$' | sed -n 's/.*/include &/gp' >> MANIFEST.in
+	git ls-files --no-empty-directory --exclude-standard $(DEBPKGNAME) | grep -v '.py$$' | sed -n 's/.*/include &/gp' >> MANIFEST.in
 	quilt refresh
 	quilt pop -a
 
