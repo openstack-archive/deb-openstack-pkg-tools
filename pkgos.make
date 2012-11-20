@@ -8,8 +8,22 @@ DEBPKGNAME	?= $(shell dpkg-parsechangelog | grep -E ^Source: | cut -d" " -f2)
 UPSTREAM_GIT	?= git://github.com/openstack/$(DEBPKGNAME).git
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 
-test:
-	echo $(UPSTREAM_GIT)
+# Activate xz compression
+override_dh_builddeb:
+	dh_builddeb -- -Zxz -z9
+
+# Only use upstart scripts in Ubuntu. All .upstart files have to be renamed .upstart.in
+override_dh_installinit:
+	if dpkg-vendor --derives-from ubuntu ; then \
+		for i in *.upstart.in ; do \
+			MYPKG=`echo $i | cut -d. -f1` ; \
+			cp $MYPKG.upstart.in $MYPKG.upstart ; \
+		done ; \
+        fi
+	dh_installinit --error-handler=true
+
+get-orig-source:
+	uscan --verbose --force-download --rename --destdir=../build-area
 
 get-vcs-source:
 	git remote add upstream $(UPSTREAM_GIT) || true
@@ -43,19 +57,4 @@ regen-manifest-patch:
 	quilt refresh
 	quilt pop -a
 
-override_dh_builddeb:
-	dh_builddeb -- -Zxz -z9
-
-override_dh_installinit:
-	if dpkg-vendor --derives-from ubuntu ; then \
-		for i in *.upstart.in ; do \
-			MYPKG=`echo $i | cut -d. -f1` ; \
-			cp $MYPKG.upstart.in $MYPKG.upstart ; \
-		done ; \
-        fi
-	dh_installinit --error-handler=true
-
-get-orig-source:
-	uscan --verbose --force-download --rename --destdir=../build-area
-
-.PHONY: get-vcs-source
+.PHONY: get-vcs-source get-orig-source override_dh_installinit override_dh_builddeb regen-manifest-patch call-for-po-trans display-po-stats versioninfo
