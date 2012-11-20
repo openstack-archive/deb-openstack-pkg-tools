@@ -2,10 +2,12 @@
 # vim: set ft=make:
 
 DEBVERS		?= $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
-VERSION		?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*//')
+VERSION		?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//')
 DEBFLAVOR	?= $(shell dpkg-parsechangelog | grep -E ^Distribution: | cut -d" " -f2)
 DEBPKGNAME	?= $(shell dpkg-parsechangelog | grep -E ^Source: | cut -d" " -f2)
 UPSTREAM_GIT	?= git://github.com/openstack/$(DEBPKGNAME).git
+GIT_TAG		?= $(shell echo '$(VERSION) | sed -e 's/~/_/'
+
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 
 # Activate xz compression
