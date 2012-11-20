@@ -6,8 +6,7 @@ VERSION		?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[-].*/
 DEBFLAVOR	?= $(shell dpkg-parsechangelog | grep -E ^Distribution: | cut -d" " -f2)
 DEBPKGNAME	?= $(shell dpkg-parsechangelog | grep -E ^Source: | cut -d" " -f2)
 UPSTREAM_GIT	?= git://github.com/openstack/$(DEBPKGNAME).git
-GIT_TAG		?= $(shell echo '$(VERSION) | sed -e 's/~/_/'
-
+GIT_TAG		?= $(shell echo '$(VERSION)' | sed -e 's/~/_/')
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 
 # Activate xz compression
@@ -31,7 +30,7 @@ get-vcs-source:
 	git remote add upstream $(UPSTREAM_GIT) || true
 	git fetch upstream
 	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] ; then \
-		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(VERSION) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
+		git archive --prefix=$(DEBPKGNAME)-$(GIT_TAG)/ $(GIT_TAG) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
 	fi
 	if ! git checkout master ; then \
 		echo "No upstream branch: checking out" ; \
