@@ -23,6 +23,9 @@ get-vcs-source:
 	fi
 	git checkout debian/$(DEBFLAVOR)
 
+versioninfo:
+	echo $(VERSION) > versioninfo
+
 display-po-stats:
 	cd $(CURDIR)/debian/po ; for i in *.po ; do \
 		echo -n $$i": " ; \
