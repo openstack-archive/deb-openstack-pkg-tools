@@ -366,3 +366,59 @@ pkgos_init () {
 pkgos_get_id () {
     SERVICE_ENDPOINT=${SERVICE_ENDPOINT:-http://127.0.0.1:35357/v2.0/} SERVICE_TOKEN=${AUTH_TOKEN} "$@" | awk '/ id / { print $4 }'
 }
+
+# Asks the debconf questions for registering a service and its endpoint in keystone
+# Prototype: pkgos_register_endpoint_config <pkg-name>
+# Example: pkgos_register_endpoint_config glance
+# To be used in: config
+pkgos_register_endpoint_config () {
+	local PKG_NAME
+	PKG_NAME=${1}
+
+	db_input high ${PKG_NAME}/register-endpoint || true
+	db_go
+	db_get ${PKG_NAME}/register-endpoint
+	if [ "${RET}" = "true" ] ; then
+		db_input high ${PKG_NAME}/keystone-ip
+		db_input high ${PKG_NAME}/keystone-auth-token
+		db_input high ${PKG_NAME}/endpoint-ip
+		db_input high ${PKG_NAME}/region-name
+		db_go
+	fi
+}
+
+# Register a service and its endpoint in keystone
+# Prototype: <pkg-name> <service-name> <service-type> <service-description> <serivce-port> <service-uri>
+# Example: pkgos_register_endpoint_postinst glance glance image "Glance Image Service" 9292 /v1
+# To be used in: postinst
+pkgos_register_endpoint_postinst () {
+	local PKG_NAME SERVICE_NAME KEYSTONE_ENDPOINT_IP AUTH_TOKEN PKG_ENDPOINT_IP REGION_NAME PKG_SERVICE_ID
+	PKG_NAME=${1}
+	SERVICE_NAME=${2}
+	SERVICE_TYPE=${3}
+	SERVICE_DESC=${4}
+	SERVICE_PORT=${5}
+	SERVICE_URL=${6}
+
+	db_get ${PKG_NAME}/register-endpoint
+	if [ "${RET}" = "true" ] ; then
+		db_get ${PKG_NAME}/keystone-ip
+		KEYSTONE_ENDPOINT_IP=`echo ${RET} | egrep '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
+		db_get ${PKG_NAME}/keystone-auth-token
+		AUTH_TOKEN=${RET}
+		db_get ${PKG_NAME}/endpoint-ip
+		PKG_ENDPOINT_IP=`echo ${RET} | egrep '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
+		db_get keystone/region-name
+		REGION_NAME=${RET}
+
+		if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${AUTH_TOKEN}" ] ; then
+			PKG_SERVICE_ID=$(pkgos_get_id keystone --token ${AUTH_TOKEN} --endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ service-create \
+				--name=${SERVICE_NAME} --type=${SERVICE_TYPE} --description="${SERVICE_DESC}")
+			PKG_ENDPOINT_ID=$(pkgos_get_id keystone --token ${AUTH_TOKEN} --endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ endpoint-create \
+				--region "${REGION_NAME}" --service_id=${PKG_SERVICE_ID} \
+				--publicurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
+				--internalurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
+				--adminurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL})
+		fi
+	fi
+}
