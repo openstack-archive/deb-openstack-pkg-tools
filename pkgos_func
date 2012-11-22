@@ -400,6 +400,8 @@ pkgos_register_endpoint_postinst () {
 	SERVICE_PORT=${5}
 	SERVICE_URL=${6}
 
+	echo "Registering service and endpoints for ${SERVICE_NAME} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
+
 	db_get ${PKG_NAME}/register-endpoint
 	if [ "${RET}" = "true" ] ; then
 		db_get ${PKG_NAME}/keystone-ip
