@@ -59,14 +59,10 @@ regen-manifest-patch:
 	quilt pop -a
 
 override_dh_gencontrol:
-	if [ -f $(CURDIR)/debian/ubuntu_control_vars ] && [ -f $(CURDIR)/debian/debian_control_vars ] ; then \
-		if dpkg-vendor --derives-from ubuntu ; then \
-			dh_gencontrol -- -T$(CURDIR)/debian/ubuntu_control_vars ; \
-		else \
-			dh_gencontrol -- -T$(CURDIR)/debian/debian_control_vars ; \
-		fi \
+	if dpkg-vendor --derives-from ubuntu ; then \
+		dh_gencontrol -- -T$(CURDIR)/debian/ubuntu_control_vars ; \
 	else \
-		dh_gencontrol -- \
+		dh_gencontrol -- -T$(CURDIR)/debian/debian_control_vars ; \
 	fi
 
 .PHONY: get-vcs-source get-orig-source override_dh_installinit override_dh_builddeb regen-manifest-patch call-for-po-trans display-po-stats versioninfo
