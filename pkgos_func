@@ -427,4 +427,7 @@ pkgos_register_endpoint_postinst () {
 				--adminurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL})
 		fi
 	fi
+	# For security reasons, we don't keep the auth-token in the debconf
+	# memory, so we purge it with db_unregister.
+	db_unregister ${PKG_NAME}/keystone-auth-token
 }
