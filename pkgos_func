@@ -347,7 +347,11 @@ pkgos_var_user_group () {
 		mkdir -p /var/lib/${PKG_NAME}/cache
 	fi
 	chown -R ${PKG_NAME}:${PKG_NAME} /var/lib/${PKG_NAME}
-	chmod -R 0770 /var/lib/${PKG_NAME}
+	if [ "${PKG_NAME}" = "nova" ] ; then
+		chmod 755 /var/lib/nova
+	else
+		chmod 0750 /var/lib/${PKG_NAME}
+	fi
 	if [ ! -d /var/log/${PKG_NAME} ] ; then
 		mkdir -p /var/log/${PKG_NAME}
 	fi
