@@ -189,6 +189,7 @@ pkgos_dbc_read_conf () {
 			fi
 			dbc_authmethod_user="password"
 		fi
+		echo "PKG-Openstack now calling: dbc_go "${DPKG_MAINTSCRIPT_PACKAGE} $@
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
 	fi
 }
