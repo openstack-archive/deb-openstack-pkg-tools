@@ -397,7 +397,7 @@ pkgos_register_endpoint_config () {
 # Example: pkgos_register_endpoint_postinst glance glance image "Glance Image Service" 9292 /v1
 # To be used in: postinst
 pkgos_register_endpoint_postinst () {
-	local PKG_NAME SERVICE_NAME KEYSTONE_ENDPOINT_IP AUTH_TOKEN PKG_ENDPOINT_IP REGION_NAME PKG_SERVICE_ID
+	local PKG_NAME SERVICE_NAME SERVICE_TYPE SERVICE_DESC SERVICE_PORT SERVICE_URL KEYSTONE_ENDPOINT_IP AUTH_TOKEN PKG_ENDPOINT_IP REGION_NAME PKG_SERVICE_ID
 	PKG_NAME=${1}
 	SERVICE_NAME=${2}
 	SERVICE_TYPE=${3}
@@ -405,7 +405,6 @@ pkgos_register_endpoint_postinst () {
 	SERVICE_PORT=${5}
 	SERVICE_URL=${6}
 
-	echo "Registering service and endpoints for ${SERVICE_NAME} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
 
 	db_get ${PKG_NAME}/register-endpoint
 	if [ "${RET}" = "true" ] ; then
@@ -419,6 +418,7 @@ pkgos_register_endpoint_postinst () {
 		REGION_NAME=${RET}
 
 		if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${AUTH_TOKEN}" ] ; then
+			echo "Registering service and endpoints for ${SERVICE_NAME} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
 			PKG_SERVICE_ID=$(pkgos_get_id keystone --token ${AUTH_TOKEN} --endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ service-create \
 				--name=${SERVICE_NAME} --type=${SERVICE_TYPE} --description="${SERVICE_DESC}")
 			PKG_ENDPOINT_ID=$(pkgos_get_id keystone --token ${AUTH_TOKEN} --endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ endpoint-create \
@@ -426,7 +426,11 @@ pkgos_register_endpoint_postinst () {
 				--publicurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
 				--internalurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
 				--adminurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL})
+		else
+			echo "Problem in endpoint parameter (IPs or otherwise)."
 		fi
+	else
+		echo "Will not register "${SERVICE_NAME}" endpoint this time (no user request for it)."
 	fi
 	# For security reasons, we don't keep the auth-token in the debconf
 	# memory, so we purge it with db_unregister.
