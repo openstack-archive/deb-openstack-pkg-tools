@@ -383,10 +383,10 @@ pkgos_register_endpoint_config () {
 	db_go
 	db_get ${PKG_NAME}/register-endpoint
 	if [ "${RET}" = "true" ] ; then
-		db_input high ${PKG_NAME}/keystone-ip
-		db_input high ${PKG_NAME}/keystone-auth-token
-		db_input high ${PKG_NAME}/endpoint-ip
-		db_input high ${PKG_NAME}/region-name
+		db_input high ${PKG_NAME}/keystone-ip || true
+		db_input high ${PKG_NAME}/keystone-auth-token || true
+		db_input high ${PKG_NAME}/endpoint-ip || true
+		db_input high ${PKG_NAME}/region-name || true
 		db_go
 	fi
 }
