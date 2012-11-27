@@ -429,6 +429,13 @@ pkgos_register_endpoint_postinst () {
 		else
 			echo "Problem in endpoint parameter (IPs or otherwise)."
 		fi
+		# Since there's very little chance a 2nd registration of the
+		# endpoint will be needed, we forget the value of
+		# ${PKG_NAME}/register-endpoint. If later on the
+		# administrator of the server upgrades, it will be asked
+		# again, or eventually, dpkg-reconfigure <package-name> can
+		# be used.
+		db_unregister ${PKG_NAME}/register-endpoint
 	else
 		echo "Will not register "${SERVICE_NAME}" endpoint this time (no user request for it)."
 	fi
