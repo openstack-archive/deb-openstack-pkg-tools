@@ -32,6 +32,13 @@ gen-upstream-changelog:
 	git add $(CURDIR)/debian/CHANGELOG
 	git commit -a -m "Updated upstream changelog"
 
+override_dh_installchangelogs:
+	if [ -e $(CURDIR)/debian/CHANGELOG ] ; then \
+		dh_installchangelogs $(CURDIR)/debian/CHANGELOG ; \
+	else \
+		dh_installchangelogs ; \
+	fi
+
 get-orig-source:
 	uscan --verbose --force-download --rename --destdir=../build-area
 
