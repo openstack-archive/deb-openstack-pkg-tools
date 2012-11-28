@@ -70,7 +70,7 @@ regen-manifest-patch:
 	quilt pop -a || true
 	quilt push install-missing-files.patch
 	git checkout MANIFEST.in
-	git ls-files --no-empty-directory --exclude-standard $(MANIFEST_EXCLUDE_STANDARD) | grep -v '.py$$' | sed -n 's/.*/include &/gp' >> MANIFEST.in
+	git ls-files --no-empty-directory --exclude-standard $(MANIFEST_EXCLUDE_STANDARD) | grep -v '.py$$' | grep -v LICENSE | sed -n 's/.*/include &/gp' >> MANIFEST.in
 	quilt refresh
 	quilt pop -a
 
