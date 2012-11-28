@@ -23,6 +23,15 @@ override_dh_installinit:
         fi
 	dh_installinit --error-handler=true
 
+gen-upstream-changelog:
+	git checkout master
+	git reset --hard $(GIT_TAG)
+	git log >$(CURDIR)/../CHANGELOG
+	git checkout debian/$(DEBFLAVOR)
+	mv $(CURDIR)/../CHANGELOG $(CURDIR)/debian/CHANGELOG
+	git add $(CURDIR)/debian/CHANGELOG
+	git commit -a -m "Updated upstream changelog"
+
 get-orig-source:
 	uscan --verbose --force-download --rename --destdir=../build-area
 
