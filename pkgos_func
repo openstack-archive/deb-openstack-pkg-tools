@@ -61,13 +61,20 @@ print config['${SECTION}']['${DIRECTIVE}']")
 # Read the value of a directive in a config file,
 # then prompt the user about it.
 # Example (options in this order please...):
-# pkgos_read_config -r -sh /etc/keystone/keystone.conf auth_token keystone/auth-token DEFAULT
+# pkgos_read_config -r -p medium -sh /etc/keystone/keystone.conf auth_token keystone/auth-token DEFAULT
 # To be used in: config
 pkgos_read_config () {
-	local DIRECTIVE CONF_PATH DEBCONF_NAME VALUE SECTION FSET_SEEN SHELL_SCRIPT_MODE
+	local DIRECTIVE CONF_PATH DEBCONF_NAME VALUE SECTION FSET_SEEN SHELL_SCRIPT_MODE MY_PRIORITY
 	if [ "${1}" = "-r" ] ; then
 		FSET_SEEN="yes"
 		shift
+	fi
+	if [ "${1}" = "-p" ] ; then
+		MY_PRIORITY=${2}
+		shift
+		shift
+	else
+		MY_PRIORITY=high
 	fi
 	if [ "${1}" = "-sh" ] ; then
 		SHELL_SCRIPT_MODE="yes"
@@ -92,7 +99,7 @@ pkgos_read_config () {
 	if [ "${FSET_SEEN}" = "yes" ] ; then
 		db_fset ${DEBCONF_NAME} seen false
 	fi
-	db_input high ${DEBCONF_NAME} || true
+	db_input ${MY_PRIORITY} ${DEBCONF_NAME} || true
 	db_go
 	db_get ${DEBCONF_NAME}
 }
