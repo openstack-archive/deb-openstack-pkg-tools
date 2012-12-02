@@ -292,8 +292,8 @@ pkgos_read_admin_creds () {
 	SECTION=${3}
 
 	pkgos_read_config ${CONF_FNAME} auth_host         ${PKG_NAME}/auth-host         ${SECTION}
-        pkgos_read_config ${CONF_FNAME} admin_tenant_name ${PKG_NAME}/admin-tenant-name ${SECTION}
-        pkgos_read_config ${CONF_FNAME} admin_user        ${PKG_NAME}/admin-user        ${SECTION}
+        pkgos_read_config -p medium ${CONF_FNAME} admin_tenant_name ${PKG_NAME}/admin-tenant-name ${SECTION}
+        pkgos_read_config -p medium ${CONF_FNAME} admin_user        ${PKG_NAME}/admin-user        ${SECTION}
         pkgos_read_config ${CONF_FNAME} admin_password    ${PKG_NAME}/admin-password    ${SECTION}
 }
 
