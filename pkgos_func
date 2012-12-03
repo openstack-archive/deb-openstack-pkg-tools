@@ -402,8 +402,8 @@ pkgos_register_endpoint_config () {
 				db_set ${PKG_NAME}/endpoint-ip ${DEFROUTE_IP}
 			fi
 		fi
-		db_input high ${PKG_NAME}/endpoint-ip || true
-		db_input high ${PKG_NAME}/region-name || true
+		db_input medium ${PKG_NAME}/endpoint-ip || true
+		db_input medium ${PKG_NAME}/region-name || true
 		db_go
 	fi
 }
