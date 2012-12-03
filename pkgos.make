@@ -18,7 +18,7 @@ override_dh_installinit:
 	if dpkg-vendor --derives-from ubuntu ; then \
 		for i in *.upstart.in ; do \
 			MYPKG=`echo $i | cut -d. -f1` ; \
-			cp $MYPKG.upstart.in $MYPKG.upstart ; \
+			cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
 		done ; \
         fi
 	dh_installinit --error-handler=true
