@@ -393,6 +393,15 @@ pkgos_register_endpoint_config () {
 	if [ "${RET}" = "true" ] ; then
 		db_input high ${PKG_NAME}/keystone-ip || true
 		db_input high ${PKG_NAME}/keystone-auth-token || true
+
+		db_get ${PKG_NAME}/endpoint-ip || true
+		if [ -z "${RET}" ] ; then
+			DEFROUTE_IF=`LC_ALL=C /sbin/route | grep default |awk -- '{ print $8 }'`
+			DEFROUTE_IP=`LC_ALL=C ip addr show "${DEFROUTE_IF}" | grep inet | head -n 1 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
+			if [ -n "${DEFROUTE_IP}" ] ; then
+				db_set ${PKG_NAME}/endpoint-ip ${DEFROUTE_IP}
+			fi
+		fi
 		db_input high ${PKG_NAME}/endpoint-ip || true
 		db_input high ${PKG_NAME}/region-name || true
 		db_go
