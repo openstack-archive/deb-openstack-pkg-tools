@@ -434,7 +434,7 @@ pkgos_register_endpoint_postinst () {
 		AUTH_TOKEN=${RET}
 		db_get ${PKG_NAME}/endpoint-ip
 		PKG_ENDPOINT_IP=`echo ${RET} | egrep '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
-		db_get keystone/region-name
+		db_get ${PKG_NAME}/region-name
 		REGION_NAME=${RET}
 
 		if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${AUTH_TOKEN}" ] ; then
