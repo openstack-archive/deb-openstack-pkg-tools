@@ -23,6 +23,9 @@ override_dh_installinit:
         fi
 	dh_installinit --error-handler=true
 
+gen-author-list:
+	git log --format='%aN <%aE>' | awk '{arr[$0]++} END{for (i in arr){print arr[i], i;}}' | sort -rn | cut -d' ' -f2-
+
 gen-upstream-changelog:
 	git checkout master
 	git reset --hard $(GIT_TAG)
