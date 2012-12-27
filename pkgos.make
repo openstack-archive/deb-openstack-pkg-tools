@@ -51,7 +51,7 @@ get-vcs-source:
 	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] ; then \
 		git archive --prefix=$(DEBPKGNAME)-$(GIT_TAG)/ $(GIT_TAG) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
 	fi
-	[ ! -e ../build-area ] && mkdir ../build-area
+	[ ! -e ../build-area ] && mkdir ../build-area || true
 	[ ! -e ../build-area/$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] && cp ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ../build-area
 	if ! git checkout master ; then \
 		echo "No upstream branch: checking out" ; \
