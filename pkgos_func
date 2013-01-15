@@ -128,7 +128,6 @@ pkgos_dbc_read_conf () {
 	    shift
 	fi	    
 
-	db_fset ${PKG_NAME}/configure_db seen false
 	db_input high ${PKG_NAME}/configure_db || true
 	db_go || true
 	db_get ${PKG_NAME}/configure_db
