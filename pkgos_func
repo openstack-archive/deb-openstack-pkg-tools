@@ -110,8 +110,19 @@ pkgos_read_config () {
 # and fills the dbc_* variable accordingly,
 # then call dbconfig to do the actual configuration.
 # To be used in: config
+# Example call: pkgos_dbc_read_conf -pkg glance-common /etc/glance/glance-registry.conf glance DEFAULT sql_connection $@
 pkgos_dbc_read_conf () {
 	local ADDR BEFORE_AT AFTER_AT SERVER_PORT CONN_STRING PKG_NAME CONF_PATH PARSED_DB_TYPE PARSED_USER PARSED_PASS PARSED_DB_NAME PARSED_SERVER PARSED_PORT SHELL_SCRIPT_MODE
+	# This works around a bug in either dpkg, apt or debconf: in fact,
+	# likely in debconf, the variable DPKG_MAINTSCRIPT_PACKAGE isn't
+	# always set as it should.
+	if [ "${1}" = "-pkg" ] ; then
+		if [ -z "${DPKG_MAINTSCRIPT_PACKAGE}" ] ; then
+			DPKG_MAINTSCRIPT_PACKAGE=$2
+		fi
+		shift
+		shift
+	fi
 	if [ "${1}" = "-sh" ] ; then
 		SHELL_SCRIPT_MODE="yes"
 		shift
