@@ -303,7 +303,24 @@ pkgos_read_admin_creds () {
 	PKG_NAME=${2}
 	SECTION=${3}
 
-	pkgos_read_config ${CONF_FNAME} auth_host         ${PKG_NAME}/auth-host         ${SECTION}
+	if grep -q auth_host ${CONF_FNAME} ; then
+		pkgos_read_config ${CONF_FNAME} auth_host         ${PKG_NAME}/auth-host         ${SECTION}
+	else
+		# This is needed for l3_agent.ini
+		if grep -q auth_url ${CONF_FNAME} ; then
+			pkgos_get_config ${CONF_FNAME} auth_url ${SECTION}
+			NO_PROTO=${RET#http://}
+			BEFORE_PORT=$(echo ${NO_PROTO} | cut -d":" -f1)
+			if [ -z "${BEFORE_PORT}" ] ; then
+				db_set ${PKG_NAME}/auth-host ${BEFORE_PORT}
+			fi
+			db_input high ${PKG_NAME}/auth-host || true
+			db_go
+		else
+			echo "Couldn't find either auth_host or auth_url :("
+		fi
+	fi
+
         pkgos_read_config -p medium ${CONF_FNAME} admin_tenant_name ${PKG_NAME}/admin-tenant-name ${SECTION}
         pkgos_read_config -p medium ${CONF_FNAME} admin_user        ${PKG_NAME}/admin-user        ${SECTION}
         pkgos_read_config ${CONF_FNAME} admin_password    ${PKG_NAME}/admin-password    ${SECTION}
@@ -317,7 +334,21 @@ pkgos_write_admin_creds () {
 	SECTION=${3}
 
 	db_get ${PKG_NAME}/auth-host
-	pkgos_edit_config auth_host "${RET}" ${CONF_FNAME} ${SECTION}
+	AUTH_HOST=${RET}
+	if grep -q auth_host ${CONF_FNAME} ; then
+		pkgos_edit_config auth_host "${RET}" ${CONF_FNAME} ${SECTION}
+	else
+		# This is needed for l3_agent.ini
+		if grep -q auth_url ${CONF_FNAME} ; then
+			pkgos_get_config ${CONF_FNAME} auth_url ${SECTION}
+			NO_PROTO=${RET#http://}
+			AFTER_PORT=$(echo ${NO_PROTO} | cut -d":" -f2)
+			URL="http://${AUTH_HOST}:${AFTER_PORT}"
+			pkgos_edit_config auth_url ${URL} ${CONF_FNAME} ${SECTION}
+		else
+			echo "Couldn't find either auth_host or auth_url :("
+		fi
+	fi
 	db_get ${PKG_NAME}/admin-tenant-name
 	pkgos_edit_config admin_tenant_name "${RET}" ${CONF_FNAME} ${SECTION}
 	db_get ${PKG_NAME}/admin-user
