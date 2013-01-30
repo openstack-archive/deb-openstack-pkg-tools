@@ -8,6 +8,7 @@ DEBPKGNAME	?= $(shell dpkg-parsechangelog | grep -E ^Source: | cut -d" " -f2)
 UPSTREAM_GIT	?= git://github.com/openstack/$(DEBPKGNAME).git
 GIT_TAG		?= $(shell echo '$(VERSION)' | sed -e 's/~/_/')
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
+DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f2 | awk '{print $1}')
 
 # Activate xz compression
 override_dh_builddeb:
@@ -57,7 +58,7 @@ get-vcs-source:
 		echo "No upstream branch: checking out" ; \
 		git checkout -b master upstream/master ; \
 	fi
-	git checkout debian/$(DEBFLAVOR)
+	git checkout $(DEBIAN_BRANCH)
 
 versioninfo:
 	echo $(VERSION) > versioninfo
