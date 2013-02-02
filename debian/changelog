@@ -1,6 +1,16 @@
 openstack-pkg-tools (2) experimental; urgency=low
 
   * Now copying the orig.tar.xz in the build-area after creating it.
+  * Now using the debian branch name defined in debian/gbp.conf for
+    get-vcs-source.
+  * Added code to handle auth_url instead of auth_host / auth_port /
+    auth_proto.
+  * Added a workround the fact that DPKG_MAINTSCRIPT_PACKAGE isn't always
+    set (bug in debconf?)
+  * Added a gen-author-list: target.
+  * Sets various debconf questions with priority medium instead of high.
+  * Added gen-upstream-changelog to generate a debian/CHANGELOG from
+    upstream git log.
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 20 Dec 2012 09:50:58 +0000
 
