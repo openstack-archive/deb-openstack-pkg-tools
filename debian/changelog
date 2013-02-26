@@ -1,7 +1,8 @@
-openstack-pkg-tools (3) UNRELEASED; urgency=low
+openstack-pkg-tools (3) experimental; urgency=low
 
   [ Thomas Goirand ]
-  * Next version...
+  * Don't attempt to read anything from the config file if it isn't
+    installed in /etc (in the pkgos_read_admin_creds pkgos.make target).
 
   [ James Page ]
   * Fixup handling of d/*.upstart.in to fix build failures
