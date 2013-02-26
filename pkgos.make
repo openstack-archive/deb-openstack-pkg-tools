@@ -15,9 +15,11 @@ override_dh_builddeb:
 	dh_builddeb -- -Zxz -z9
 
 # Only use upstart scripts in Ubuntu. All .upstart files have to be renamed .upstart.in
+# NOTE: this is actually no longer required as the debhelper in wheezy and Ubuntu just
+# do the right things now but this needs to be retained for compatibility
 override_dh_installinit:
 	if dpkg-vendor --derives-from ubuntu ; then \
-		for i in *.upstart.in ; do \
+		for i in `ls -1 debian/*.upstart.in` ; do \
 			MYPKG=`echo $i | cut -d. -f1` ; \
 			cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
 		done ; \

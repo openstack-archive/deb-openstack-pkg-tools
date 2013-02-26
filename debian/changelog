@@ -1,6 +1,11 @@
-openstack-pkg-tools (3) experimental; urgency=low
+openstack-pkg-tools (3) UNRELEASED; urgency=low
 
+  [ Thomas Goirand ]
   * Next version...
+
+  [ James Page ]
+  * Fixup handling of d/*.upstart.in to fix build failures
+    downstream in Ubuntu. 
 
  -- Thomas Goirand <zigo@debian.org>  Sat, 02 Feb 2013 11:30:43 +0000
 
