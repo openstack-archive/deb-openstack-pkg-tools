@@ -19,7 +19,13 @@ pkgos_gen_pass () {
 #
 # Returns: $RET: either NOT_FOUND, or the (previous, in the case of set) value of the searched directive
 pkgos_inifile () {
-	local ACCESS_MODE MYCONFIG SEARCH_SECTION SEARCH_DIRECTIVE NUM_LINES CNT CUR_SECTION DIRECTIVE VALUE CUR_SECTION
+	local SHELL_INCLUDE ACCESS_MODE MYCONFIG SEARCH_SECTION SEARCH_DIRECTIVE NUM_LINES CNT CUR_SECTION DIRECTIVE VALUE CUR_SECTION
+	if [ "${1}" = "-shinc" ] ; then
+		SHELL_INCLUDE=yes
+		shift
+	else
+		SHELL_INCLUDE=no
+	fi
 	ACCESS_MODE=${1} ; MYCONFIG=${2} ; SEARCH_SECTION=${3} ; SEARCH_DIRECTIVE=${4}
 	if [ "x${ACCESS_MODE}" = "xset" ] ; then NEW_VALUE=${5} ; else NEW_VALUE="pkgos_inifile_function_called_with_wrong_access_mode" ; fi
 
@@ -57,7 +63,11 @@ pkgos_inifile () {
 				RET=${VALUE}
 				if [ "x${ACCESS_MODE}" = "xset" ] ; then
 					if [ "${DIRECTIVE_TYPE}" = "equal" ] ; then
-						sed -i ${CNT}' s/.*/'${DIRECTIVE}' = '${NEW_VALUE}/ ${MYCONFIG}
+						if [ "${SHELL_INCLUDE}" = "yes" ] ; then
+							sed -i ${CNT}' s/.*/'${DIRECTIVE}'='${NEW_VALUE}/ ${MYCONFIG}
+						else
+							sed -i ${CNT}' s/.*/'${DIRECTIVE}' = '${NEW_VALUE}/ ${MYCONFIG}
+						fi
 					else
 						sed -i ${CNT}' s/.*/'${DIRECTIVE}': '${NEW_VALUE}/ ${MYCONFIG}
 					fi
