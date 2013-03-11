@@ -275,8 +275,8 @@ pkgos_dbc_postinst () {
 pkgos_read_admin_creds () {
 	local CONF_FNAME PKG_NAME SECTION
 	CONF_FNAME=${1}
-	PKG_NAME=${2}
-	SECTION=${3}
+	SECTION=${2}
+	PKG_NAME=${3}
 
 	if [ ! -r "${CONF_FNAME}" ] ; then
 		# If the file doesn't exist, just ask...
