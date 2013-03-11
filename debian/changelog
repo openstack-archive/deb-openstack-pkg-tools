@@ -1,3 +1,10 @@
+openstack-pkg-tools (4) experimental; urgency=low
+
+  * Clean-ups of function parameter calling order.
+  * Rewrite of the pkgos_* functions for parsing ini files.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 12 Mar 2013 00:43:02 +0800
+
 openstack-pkg-tools (3) experimental; urgency=low
 
   [ Thomas Goirand ]
