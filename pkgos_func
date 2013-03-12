@@ -45,7 +45,14 @@ pkgos_inifile () {
 				#echo "===> $SECTION"
 			fi
 		# This is a directive: auth_host = 127.0.0.1
-		elif echo $LINE | grep -q '^[ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
+		elif echo $LINE | grep -q '^[#;]?[ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
+			# This is a commented out directive, let's remove the comment
+			# if there's no such active directive in the file
+			if echo $LINE | grep -q '^[#;][ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
+				if ! grep -q '^[#;]?[ \t]*${SEARCH_DIRECTIVE}[ \t]*[=\:][ \t]*' ${MYCONFIG} ; then
+					LINE=`echo $LINE | sed -e 's/^#//' | cut -d= -f1 | awk '{print $1}'`
+				fi
+			fi
 			# This is a directive which uses the equal sign (directive = value)
 			if echo $LINE | grep -q '^[ \t]*[\._\/a-zA-Z0-9]*[ \t]*=[ \t]*' ; then
 				DIRECTIVE=`echo $LINE | cut -d= -f1 | awk '{print $1}'`
