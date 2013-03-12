@@ -130,6 +130,12 @@ pkgos_dbc_read_conf () {
 	CONN_SECTION=${2}
 	CONN_DIRECTIVE=${3}
 	PKG_NAME=${4}
+	# Do not remove what's bellow.
+	# We need to shift, because we're using $@ in the dbc_go call later
+	shift
+	shift
+	shift
+	shift
 
 	db_input high ${PKG_NAME}/configure_db || true
 	db_go || true
