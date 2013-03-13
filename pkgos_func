@@ -108,7 +108,7 @@ pkgos_read_config () {
 	DEBCONF_NAME=${4}
 
 	pkgos_inifile get ${CONF_PATH} ${SECTION} ${DIRECTIVE}
-	if [ -n "${RET}" ] ; then
+	if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
 		db_set ${DEBCONF_NAME} ${RET}
 	fi
 	db_input ${MY_PRIORITY} ${DEBCONF_NAME} || true
@@ -153,7 +153,9 @@ pkgos_dbc_read_conf () {
 		. /usr/share/dbconfig-common/dpkg/config
 		if [ -e "${CONF_PATH}" ] ; then
 			pkgos_inifile get ${CONF_PATH} ${CONN_SECTION} ${CONN_DIRECTIVE}
-			CONN_STRING=${RET}
+			if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+				CONN_STRING=${RET}
+			fi
 		else
 			CONN_STRING=""
 		fi
@@ -301,10 +303,12 @@ pkgos_read_admin_creds () {
 			# This is needed for l3_agent.ini
 			if grep -q auth_url ${CONF_FNAME} ; then
 				pkgos_inifile get ${CONF_FNAME} ${SECTION} auth_url
-				NO_PROTO=${RET#http://}
-				BEFORE_PORT=$(echo ${NO_PROTO} | cut -d":" -f1)
-				if [ -z "${BEFORE_PORT}" ] ; then
-					db_set ${PKG_NAME}/auth-host ${BEFORE_PORT}
+				if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+					NO_PROTO=${RET#http://}
+					BEFORE_PORT=$(echo ${NO_PROTO} | cut -d":" -f1)
+					if [ -z "${BEFORE_PORT}" ] ; then
+						db_set ${PKG_NAME}/auth-host ${BEFORE_PORT}
+					fi
 				fi
 				db_input high ${PKG_NAME}/auth-host || true
 				db_go
