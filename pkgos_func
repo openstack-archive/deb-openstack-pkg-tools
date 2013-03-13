@@ -71,12 +71,12 @@ pkgos_inifile () {
 				if [ "x${ACCESS_MODE}" = "xset" ] ; then
 					if [ "${DIRECTIVE_TYPE}" = "equal" ] ; then
 						if [ "${SHELL_INCLUDE}" = "yes" ] ; then
-							sed -i ${CNT}' s/.*/'${DIRECTIVE}'='${NEW_VALUE}/ ${MYCONFIG}
+							sed -i ${CNT}' s|.*|'${DIRECTIVE}'='${NEW_VALUE}'|' ${MYCONFIG}
 						else
-							sed -i ${CNT}' s/.*/'${DIRECTIVE}' = '${NEW_VALUE}/ ${MYCONFIG}
+							sed -i ${CNT}' s|.*|'${DIRECTIVE}' = '${NEW_VALUE}'|' ${MYCONFIG}
 						fi
 					else
-						sed -i ${CNT}' s/.*/'${DIRECTIVE}': '${NEW_VALUE}/ ${MYCONFIG}
+						sed -i ${CNT}' s|.*|'${DIRECTIVE}': '${NEW_VALUE}'|' ${MYCONFIG}
 					fi
 				fi
 				return
