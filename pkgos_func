@@ -240,6 +240,10 @@ pkgos_dbc_postinst () {
 	CONN_SECTION=${2}
 	CONN_DIRECTIVE=${3}
 	PKG_NAME=${4}
+	shift
+	shift
+	shift
+	shift
 
 	CONF_DIR=`dirname ${CONF_PATH}`
 	CONF_FNAME=`basename ${CONF_PATH}`
