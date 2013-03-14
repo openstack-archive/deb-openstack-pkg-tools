@@ -36,7 +36,7 @@ pkgos_inifile () {
 
 	# Iterate through all lines of the file
 	NUM_LINES=`cat ${MYCONFIG} | wc -l`
-	cat ${MYCONFIG} | while read LINE ; do
+	while read LINE ; do
 		CNT=$((${CNT} + 1 ))
 		# This is a section block: [DEFAULT]
 		if echo $LINE | grep -q '^[ \t]*\[.*\][ \t]*$' ; then
@@ -85,7 +85,7 @@ pkgos_inifile () {
 		elif echo $LINE | grep -q '^[ \t]*#.*$' ; then
 			echo -n ""
 		fi
-	done
+	done < ${MYCONFIG}
 }
 
 # Read the value of a directive in a config file,
