@@ -19,73 +19,71 @@ pkgos_gen_pass () {
 #
 # Returns: $RET: either NOT_FOUND, or the (previous, in the case of set) value of the searched directive
 pkgos_inifile () {
-	local SHELL_INCLUDE ACCESS_MODE MYCONFIG SEARCH_SECTION SEARCH_DIRECTIVE NUM_LINES CNT CUR_SECTION DIRECTIVE VALUE CUR_SECTION SECTION
+	local INIFILE_SHELL_INCLUDE INIFILE_ACCESS_MODE INIFILE_MYCONFIG INIFILE_SEARCH_SECTION SEARCH_DIRECTIVE INIFILE_CNT INIFILE_DIRECTIVE INIFILE_VALUE INIFILE_SECTION INIFILE_LINE DIRECTIVE_TYPE INIFILE_NEW_VALUE
 	if [ "${1}" = "-shinc" ] ; then
-		SHELL_INCLUDE=yes
+		INIFILE_SHELL_INCLUDE=yes
 		shift
 	else
-		SHELL_INCLUDE=no
+		INIFILE_SHELL_INCLUDE=no
 	fi
-	ACCESS_MODE=${1} ; MYCONFIG=${2} ; SEARCH_SECTION=${3} ; SEARCH_DIRECTIVE=${4}
-	if [ "x${ACCESS_MODE}" = "xset" ] ; then NEW_VALUE=${5} ; else NEW_VALUE="pkgos_inifile_function_called_with_wrong_access_mode" ; fi
+	INIFILE_ACCESS_MODE=${1} ; INIFILE_MYCONFIG=${2} ; INIFILE_SEARCH_SECTION=${3} ; SEARCH_DIRECTIVE=${4}
+	if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then INIFILE_NEW_VALUE=${5} ; else INIFILE_NEW_VALUE="pkgos_inifile_function_called_with_wrong_access_mode" ; fi
 
-	CUR_SECTION=NO_SECTION
-	CNT=0
+	INIFILE_CNT=0
 	RET=NOT_FOUND
-	if [ ! -r ${MYCONFIG} ] ; then return ; fi
+	if [ ! -r ${INIFILE_MYCONFIG} ] ; then return ; fi
 
 	# Iterate through all lines of the file
-	NUM_LINES=`cat ${MYCONFIG} | wc -l`
-	while read LINE ; do
-		CNT=$((${CNT} + 1 ))
+	while read INIFILE_LINE ; do
+		INIFILE_CNT=$((${INIFILE_CNT} + 1 ))
 		# This is a section block: [DEFAULT]
-		if echo $LINE | grep -q '^[ \t]*\[.*\][ \t]*$' ; then
-			if [ ! "${SEARCH_SECTION}" = "NO_SECTION" ] ; then
-				SECTION=`echo ${LINE} | sed -e 's/\[//' | sed -e 's/\]//'`
-				#echo "===> $SECTION"
+		if echo ${INIFILE_LINE} | grep -q '^[ \t]*\[.*\][ \t]*$' ; then
+			if [ ! "${INIFILE_SEARCH_SECTION}" = "NO_SECTION" ] ; then
+				INIFILE_SECTION=`echo ${INIFILE_LINE} | sed -e 's/\[//' | sed -e 's/\]//'`
+				#echo "===> $INIFILE_SECTION"
 			fi
 		# This is a directive: auth_host = 127.0.0.1
-		elif echo $LINE | grep -q '^[;#]*[ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
+		elif echo ${INIFILE_LINE} | grep -q '^[;#]*[ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
 			# This is a commented out directive, let's remove the comment
 			# if there's no such active directive in the file
-			if grep -q '^[#;][ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ${MYCONFIG} ; then
-				if echo ${LINE} | grep -q '^[#;][ \t]*'${SEARCH_DIRECTIVE}'[ \t]*[=\:][ \t]*' ; then
-					LINE=`echo $LINE | sed -e 's/^#//'`
+			if grep -q '^[#;][ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ${INIFILE_MYCONFIG} ; then
+				if echo ${INIFILE_LINE} | grep -q '^[#;][ \t]*'${SEARCH_DIRECTIVE}'[ \t]*[=\:][ \t]*' ; then
+					INIFILE_LINE=`echo ${INIFILE_LINE} | sed -e 's/^#//'`
 				fi
 			fi
 			# This is a directive which uses the equal sign (directive = value)
-			if echo $LINE | grep -q '^[ \t]*[\._\/a-zA-Z0-9]*[ \t]*=[ \t]*' ; then
-				DIRECTIVE=`echo $LINE | cut -d= -f1 | awk '{print $1}'`
+			if echo ${INIFILE_LINE} | grep -q '^[ \t]*[\._\/a-zA-Z0-9]*[ \t]*=[ \t]*' ; then
+				INIFILE_DIRECTIVE=`echo ${INIFILE_LINE} | cut -d= -f1 | awk '{print $1}'`
 				DIRECTIVE_TYPE="equal"
-				VALUE=`echo $LINE | cut -d= -f2 | sed -e 's/^[ \t]//'`
-				#echo ${DIRECTIVE}=${VALUE}
+				INIFILE_VALUE=`echo ${INIFILE_LINE} | cut -d= -f2 | sed -e 's/^[ \t]//'`
+				#echo ${INIFILE_DIRECTIVE}=${INIFILE_VALUE}
 			# This one uses the semi-column sign (/directive: value)
 			else
-				DIRECTIVE=`echo $LINE | cut -d':' -f1 | awk '{print $1}'`
+				INIFILE_DIRECTIVE=`echo ${INIFILE_LINE} | cut -d':' -f1 | awk '{print $1}'`
 				DIRECTIVE_TYPE="dots"
-				VALUE=`echo $LINE | cut -d':' -f2 | sed -e 's/^[ \t]//'`
-				#echo ${DIRECTIVE}: ${VALUE}
+				INIFILE_VALUE=`echo ${INIFILE_LINE} | cut -d':' -f2 | sed -e 's/^[ \t]//'`
+				#echo ${INIFILE_DIRECTIVE}: ${INIFILE_VALUE}
 			fi
-			if [ "${SECTION}" = "${SEARCH_SECTION}" ] && [ "${DIRECTIVE}" = "${SEARCH_DIRECTIVE}" ] ; then
-				RET=${VALUE}
-				if [ "x${ACCESS_MODE}" = "xset" ] ; then
+			if [ "${INIFILE_SECTION}" = "${INIFILE_SEARCH_SECTION}" ] && [ "${INIFILE_DIRECTIVE}" = "${SEARCH_DIRECTIVE}" ] ; then
+				RET=${INIFILE_VALUE}
+				if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then
 					if [ "${DIRECTIVE_TYPE}" = "equal" ] ; then
-						if [ "${SHELL_INCLUDE}" = "yes" ] ; then
-							sed -i ${CNT}' s|.*|'${DIRECTIVE}'='${NEW_VALUE}'|' ${MYCONFIG}
+						if [ "${INIFILE_SHELL_INCLUDE}" = "yes" ] ; then
+							sed -i ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}'='${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
 						else
-							sed -i ${CNT}' s|.*|'${DIRECTIVE}' = '${NEW_VALUE}'|' ${MYCONFIG}
+							sed -i ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}' = '${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
 						fi
 					else
-						sed -i ${CNT}' s|.*|'${DIRECTIVE}': '${NEW_VALUE}'|' ${MYCONFIG}
+						sed -i ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}': '${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
 					fi
 				fi
 				return
 			fi
 		# This is a comment block
-		elif echo $LINE | grep -q '^[ \t]*#.*$' ; then
+		elif echo $INIFILE_LINE | grep -q '^[ \t]*#.*$' ; then
 			echo -n ""
 		fi
-	done < ${MYCONFIG}
+	done < ${INIFILE_MYCONFIG}
 }
 
 # Read the value of a directive in a config file,
@@ -94,26 +92,26 @@ pkgos_inifile () {
 # pkgos_read_config -p medium /etc/keystone/keystone.conf auth_token keystone/auth-token DEFAULT
 # To be used in: config
 pkgos_read_config () {
-	local DIRECTIVE CONF_PATH DEBCONF_NAME VALUE SECTION FSET_SEEN MY_PRIORITY READ_CONFIG_SECTION
+	local READ_CONFIG_DIRECTIVE CONF_PATH READ_CONFIG_DEBCONF_NAME READ_CONFIG_SECTION FSET_SEEN READ_CONFIG_MY_PRIORITY
 	if [ "${1}" = "-p" ] ; then
-		MY_PRIORITY=${2}
+		READ_CONFIG_MY_PRIORITY=${2}
 		shift
 		shift
 	else
-		MY_PRIORITY=high
+		READ_CONFIG_MY_PRIORITY=high
 	fi
 	CONF_PATH=${1}
 	READ_CONFIG_SECTION=${2}
-	DIRECTIVE=${3}
-	DEBCONF_NAME=${4}
+	READ_CONFIG_DIRECTIVE=${3}
+	READ_CONFIG_DEBCONF_NAME=${4}
 
-	pkgos_inifile get ${CONF_PATH} ${READ_CONFIG_SECTION} ${DIRECTIVE}
+	pkgos_inifile get ${CONF_PATH} ${READ_CONFIG_SECTION} ${READ_CONFIG_DIRECTIVE}
 	if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
-		db_set ${DEBCONF_NAME} ${RET}
+		db_set ${READ_CONFIG_DEBCONF_NAME} ${RET}
 	fi
-	db_input ${MY_PRIORITY} ${DEBCONF_NAME} || true
+	db_input ${READ_CONFIG_MY_PRIORITY} ${READ_CONFIG_DEBCONF_NAME} || true
 	db_go
-	db_get ${DEBCONF_NAME}
+	db_get ${READ_CONFIG_DEBCONF_NAME}
 }
 
 # Read the connection directive from a config file
@@ -228,7 +226,7 @@ pkgos_dbc_read_conf () {
 # pkgos_dbc_postinst /etc/keystone/keystone.conf keystone connection $@
 # since dbc_go expect $@ as well.
 pkgos_dbc_postinst () {
-	local CONF_PATH CONF_DIR CONF_FNAME PKG_NAME SUITE
+	local DBC_POST_CONF_PATH CONF_DIR DBC_POST_CONF_FNAME PKG_NAME SUITE
 	if [ "${1}" = "--suite" ] ; then
 		SUITE=${2}
 		shift
@@ -236,7 +234,7 @@ pkgos_dbc_postinst () {
 	else
 		SUITE=${4}
 	fi
-	CONF_PATH=${1}
+	DBC_POST_CONF_PATH=${1}
 	CONN_SECTION=${2}
 	CONN_DIRECTIVE=${3}
 	PKG_NAME=${4}
@@ -245,8 +243,8 @@ pkgos_dbc_postinst () {
 	shift
 	shift
 
-	CONF_DIR=`dirname ${CONF_PATH}`
-	CONF_FNAME=`basename ${CONF_PATH}`
+	CONF_DIR=`dirname ${DBC_POST_CONF_PATH}`
+	DBC_POST_CONF_FNAME=`basename ${DBC_POST_CONF_PATH}`
 
 	# Create config files if they don't exist
 	if [ ! -d ${CONF_DIR} ] ; then
@@ -254,8 +252,8 @@ pkgos_dbc_postinst () {
 	fi
 	chmod 0770 ${CONF_DIR}
 	chown ${SUITE}:${SUITE} ${CONF_DIR}
-	if [ ! -e ${CONF_PATH} ] ; then
-		install -D -m 0660 -o ${SUITE} -g ${SUITE} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME} ${CONF_PATH}
+	if [ ! -e ${DBC_POST_CONF_PATH} ] ; then
+		install -D -m 0660 -o ${SUITE} -g ${SUITE} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${DBC_POST_CONF_FNAME} ${DBC_POST_CONF_PATH}
 	fi
 	db_get ${PKG_NAME}/configure_db
 	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
@@ -280,7 +278,7 @@ pkgos_dbc_postinst () {
 					SQL_CONNECTION="sqlite:///$dbc_basepath/$dbc_dbname"
 					;;
 			esac
-			pkgos_inifile set ${CONF_PATH} ${CONN_SECTION} ${CONN_DIRECTIVE} ${SQL_CONNECTION}
+			pkgos_inifile set ${DBC_POST_CONF_PATH} ${CONN_SECTION} ${CONN_DIRECTIVE} ${SQL_CONNECTION}
 		fi
 	fi
 }
@@ -292,29 +290,29 @@ pkgos_dbc_postinst () {
 # pkgos_read_admin_creds /etc/glance/glance-api.conf glance keystone_authtoken
 # To be used in: config
 pkgos_read_admin_creds () {
-	local CONF_FNAME PKG_NAME MY_SEARCH_SECTION
-	CONF_FNAME=${1}
-	MY_SEARCH_SECTION=${2}
-	PKG_NAME=${3}
+	local READ_ADMIN_CRED_CONF_FNAME READ_ADMIN_CRED_PKG_NAME READ_ADMIN_CRED_SEARCH_SECTION
+	READ_ADMIN_CRED_CONF_FNAME=${1}
+	READ_ADMIN_CRED_SEARCH_SECTION=${2}
+	READ_ADMIN_CRED_PKG_NAME=${3}
 
-	if [ ! -r "${CONF_FNAME}" ] ; then
+	if [ ! -r "${READ_ADMIN_CRED_CONF_FNAME}" ] ; then
 		# If the file doesn't exist, just ask...
-		db_input high ${PKG_NAME}/auth-host || true
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/auth-host || true
 	else
-		if grep -q auth_host ${CONF_FNAME} ; then
-			pkgos_read_config ${CONF_FNAME} ${MY_SEARCH_SECTION} auth_host ${PKG_NAME}/auth-host
+		if grep -q auth_host ${READ_ADMIN_CRED_CONF_FNAME} ; then
+			pkgos_read_config ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_host ${READ_ADMIN_CRED_PKG_NAME}/auth-host
 		else
 			# This is needed for l3_agent.ini
-			if grep -q auth_url ${CONF_FNAME} ; then
-				pkgos_inifile get ${CONF_FNAME} ${MY_SEARCH_SECTION} auth_url
+			if grep -q auth_url ${READ_ADMIN_CRED_CONF_FNAME} ; then
+				pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_url
 				if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
 					NO_PROTO=${RET#http://}
 					BEFORE_PORT=$(echo ${NO_PROTO} | cut -d":" -f1)
 					if [ -z "${BEFORE_PORT}" ] ; then
-						db_set ${PKG_NAME}/auth-host ${BEFORE_PORT}
+						db_set ${READ_ADMIN_CRED_PKG_NAME}/auth-host ${BEFORE_PORT}
 					fi
 				fi
-				db_input high ${PKG_NAME}/auth-host || true
+				db_input high ${READ_ADMIN_CRED_PKG_NAME}/auth-host || true
 				db_go
 			else
 				echo "Couldn't find either auth_host or auth_url :("
@@ -322,93 +320,93 @@ pkgos_read_admin_creds () {
 		fi
 	fi
 
-        pkgos_read_config -p medium ${CONF_FNAME} ${MY_SEARCH_SECTION} admin_tenant_name ${PKG_NAME}/admin-tenant-name
-        pkgos_read_config -p medium ${CONF_FNAME} ${MY_SEARCH_SECTION} admin_user ${PKG_NAME}/admin-user
-        pkgos_read_config ${CONF_FNAME} ${MY_SEARCH_SECTION} admin_password ${PKG_NAME}/admin-password
+        pkgos_read_config -p medium ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} admin_tenant_name ${READ_ADMIN_CRED_PKG_NAME}/admin-tenant-name
+        pkgos_read_config -p medium ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} admin_user ${READ_ADMIN_CRED_PKG_NAME}/admin-user
+        pkgos_read_config ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} admin_password ${READ_ADMIN_CRED_PKG_NAME}/admin-password
 }
 
 # To be used in: postinst
 pkgos_write_admin_creds () {
-	local CONF_FNAME PKG_NAME WRITE_CRED_SECTION
-	CONF_FNAME=${1}
+	local WRITE_CRED_CONF_FNAME WRITE_CRED_PKG_NAME WRITE_CRED_SECTION NO_PROTO AFTER_PORT WRITE_CRED_URL
+	WRITE_CRED_CONF_FNAME=${1}
 	WRITE_CRED_SECTION=${2}
-	PKG_NAME=${3}
+	WRITE_CRED_PKG_NAME=${3}
 
-	db_get ${PKG_NAME}/auth-host
-	AUTH_HOST=${RET}
-	if grep -q auth_host ${CONF_FNAME} ; then
-		pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} ${RET}
+	db_get ${WRITE_CRED_PKG_NAME}/auth-host
+	WRITE_CRED_AUTH_HOST=${RET}
+	if grep -q auth_host ${WRITE_CRED_CONF_FNAME} ; then
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} ${RET}
 	else
 		# This is needed for l3_agent.ini
-		if grep -q auth_url ${CONF_FNAME} ; then
-			pkgos_inifile get ${CONF_FNAME} ${WRITE_CRED_SECTION} auth_url
+		if grep -q auth_url ${WRITE_CRED_CONF_FNAME} ; then
+			pkgos_inifile get ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_url
 			NO_PROTO=${RET#http://}
 			AFTER_PORT=$(echo ${NO_PROTO} | cut -d":" -f2)
-			URL="http://${AUTH_HOST}:${AFTER_PORT}"
-			pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} auth_url ${URL}
+			WRITE_CRED_URL="http://${WRITE_CRED_AUTH_HOST}:${AFTER_PORT}"
+			pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_url ${WRITE_CRED_URL}
 		else
 			echo "Couldn't find either auth_host or auth_url :("
 		fi
 	fi
-	db_get ${PKG_NAME}/admin-tenant-name
-	pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} admin_tenant_name ${RET}
-	db_get ${PKG_NAME}/admin-user
-	pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} admin_user ${RET}
-	db_get ${PKG_NAME}/admin-password
-	pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} admin_password ${RET}
+	db_get ${WRITE_CRED_PKG_NAME}/admin-tenant-name
+	pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} admin_tenant_name ${RET}
+	db_get ${WRITE_CRED_PKG_NAME}/admin-user
+	pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} admin_user ${RET}
+	db_get ${WRITE_CRED_PKG_NAME}/admin-password
+	pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} admin_password ${RET}
 }
 
 pkgos_write_new_conf () {
-	local PKG_NAME CONF_FNAME
-	PKG_NAME=${1}
+	local WRITE_N_CONF_PKG_NAME CONF_FNAME
+	WRITE_N_CONF_PKG_NAME=${1}
 	CONF_FNAME=${2}
 
 	SRC_PATH=/usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME}
-	DST_DIR=/etc/${PKG_NAME}
+	DST_DIR=/etc/${WRITE_N_CONF_PKG_NAME}
 	DST_PATH=${DST_DIR}/${CONF_FNAME}
 	if [ ! -d ${DST_DIR} ] ; then
 		mkdir -p ${DST_DIR}
 	fi
 	chmod 0750 ${DST_DIR}
-	chown ${PKG_NAME}:${PKG_NAME} ${DST_DIR}
+	chown ${WRITE_N_CONF_PKG_NAME}:${WRITE_N_CONF_PKG_NAME} ${DST_DIR}
 	if [ ! -e ${DST_PATH} ] ; then
-		install -D -m 640 -o ${PKG_NAME} -g ${PKG_NAME} ${SRC_PATH} ${DST_PATH}
+		install -D -m 640 -o ${WRITE_N_CONF_PKG_NAME} -g ${WRITE_N_CONF_PKG_NAME} ${SRC_PATH} ${DST_PATH}
 	fi
 }
 
 pkgos_var_user_group () {
-	local PKG_NAME
-	PKG_NAME=${1}
+	local VAR_UG_PKG_NAME
+	VAR_UG_PKG_NAME=${1}
 
 	# Create user and groups if they don't exist
-	if ! getent group ${PKG_NAME} > /dev/null 2>&1 ; then
-		addgroup --quiet --system ${PKG_NAME}
+	if ! getent group ${VAR_UG_PKG_NAME} > /dev/null 2>&1 ; then
+		addgroup --quiet --system ${VAR_UG_PKG_NAME}
 	fi
-	if ! getent passwd ${PKG_NAME} > /dev/null 2>&1 ; then
+	if ! getent passwd ${VAR_UG_PKG_NAME} > /dev/null 2>&1 ; then
 		adduser --system \
-			--home /var/lib/${PKG_NAME} \
+			--home /var/lib/${VAR_UG_PKG_NAME} \
 			--no-create-home \
 			--quiet \
 			--disabled-password \
 			--shell /bin/bash \
-			--group ${PKG_NAME}
+			--group ${VAR_UG_PKG_NAME}
 	fi
 
 	# Create /var/{lib,log}/<package> with that user/group if it doesn't exist
-	if [ ! -d /var/lib/${PKG_NAME} ] ; then
-		mkdir -p /var/lib/${PKG_NAME}/cache
+	if [ ! -d /var/lib/${VAR_UG_PKG_NAME} ] ; then
+		mkdir -p /var/lib/${VAR_UG_PKG_NAME}/cache
 	fi
-	chown -R ${PKG_NAME}:${PKG_NAME} /var/lib/${PKG_NAME}
-	if [ "${PKG_NAME}" = "nova" ] ; then
+	chown -R ${VAR_UG_PKG_NAME}:${VAR_UG_PKG_NAME} /var/lib/${VAR_UG_PKG_NAME}
+	if [ "${VAR_UG_PKG_NAME}" = "nova" ] ; then
 		chmod 755 /var/lib/nova
 	else
-		chmod 0750 /var/lib/${PKG_NAME}
+		chmod 0750 /var/lib/${VAR_UG_PKG_NAME}
 	fi
-	if [ ! -d /var/log/${PKG_NAME} ] ; then
-		mkdir -p /var/log/${PKG_NAME}
+	if [ ! -d /var/log/${VAR_UG_PKG_NAME} ] ; then
+		mkdir -p /var/log/${VAR_UG_PKG_NAME}
 	fi
-	chown ${PKG_NAME}:${PKG_NAME} /var/log/${PKG_NAME}
-	chmod 0750 /var/log/${PKG_NAME}
+	chown ${VAR_UG_PKG_NAME}:${VAR_UG_PKG_NAME} /var/log/${VAR_UG_PKG_NAME}
+	chmod 0750 /var/log/${VAR_UG_PKG_NAME}
 }
 
 pkgos_init () {
@@ -428,30 +426,30 @@ pkgos_get_id () {
 # Example: pkgos_register_endpoint_config glance
 # To be used in: config
 pkgos_register_endpoint_config () {
-	local PKG_NAME
-	PKG_NAME=${1}
+	local REG_ENDP_PKG_NAME DEFROUTE_IF DEFROUTE_IP
+	REG_ENDP_PKG_NAME=${1}
 
-	db_input high ${PKG_NAME}/register-endpoint || true
+	db_input high ${REG_ENDP_PKG_NAME}/register-endpoint || true
 	db_go
-	db_get ${PKG_NAME}/register-endpoint
+	db_get ${REG_ENDP_PKG_NAME}/register-endpoint
 	if [ "${RET}" = "true" ] ; then
-		db_get ${PKG_NAME}/keystone-ip
+		db_get ${REG_ENDP_PKG_NAME}/keystone-ip
 		if [ -z "${RET}" ] ; then
-			db_set ${PKG_NAME}/keystone-ip 127.0.0.1
+			db_set ${REG_ENDP_PKG_NAME}/keystone-ip 127.0.0.1
 		fi
-		db_input medium ${PKG_NAME}/keystone-ip || true
-		db_input high ${PKG_NAME}/keystone-auth-token || true
+		db_input medium ${REG_ENDP_PKG_NAME}/keystone-ip || true
+		db_input high ${REG_ENDP_PKG_NAME}/keystone-auth-token || true
 
-		db_get ${PKG_NAME}/endpoint-ip || true
+		db_get ${REG_ENDP_PKG_NAME}/endpoint-ip || true
 		if [ -z "${RET}" ] ; then
 			DEFROUTE_IF=`LC_ALL=C /sbin/route | grep default |awk -- '{ print $8 }'`
 			DEFROUTE_IP=`LC_ALL=C ip addr show "${DEFROUTE_IF}" | grep inet | head -n 1 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
 			if [ -n "${DEFROUTE_IP}" ] ; then
-				db_set ${PKG_NAME}/endpoint-ip ${DEFROUTE_IP}
+				db_set ${REG_ENDP_PKG_NAME}/endpoint-ip ${DEFROUTE_IP}
 			fi
 		fi
-		db_input medium ${PKG_NAME}/endpoint-ip || true
-		db_input medium ${PKG_NAME}/region-name || true
+		db_input medium ${REG_ENDP_PKG_NAME}/endpoint-ip || true
+		db_input medium ${REG_ENDP_PKG_NAME}/region-name || true
 		db_go
 	fi
 }
