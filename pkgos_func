@@ -19,7 +19,7 @@ pkgos_gen_pass () {
 #
 # Returns: $RET: either NOT_FOUND, or the (previous, in the case of set) value of the searched directive
 pkgos_inifile () {
-	local SHELL_INCLUDE ACCESS_MODE MYCONFIG SEARCH_SECTION SEARCH_DIRECTIVE NUM_LINES CNT CUR_SECTION DIRECTIVE VALUE CUR_SECTION
+	local SHELL_INCLUDE ACCESS_MODE MYCONFIG SEARCH_SECTION SEARCH_DIRECTIVE NUM_LINES CNT CUR_SECTION DIRECTIVE VALUE CUR_SECTION SECTION
 	if [ "${1}" = "-shinc" ] ; then
 		SHELL_INCLUDE=yes
 		shift
