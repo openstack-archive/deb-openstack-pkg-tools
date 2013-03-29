@@ -94,7 +94,7 @@ pkgos_inifile () {
 # pkgos_read_config -p medium /etc/keystone/keystone.conf auth_token keystone/auth-token DEFAULT
 # To be used in: config
 pkgos_read_config () {
-	local DIRECTIVE CONF_PATH DEBCONF_NAME VALUE SECTION FSET_SEEN MY_PRIORITY
+	local DIRECTIVE CONF_PATH DEBCONF_NAME VALUE SECTION FSET_SEEN MY_PRIORITY READ_CONFIG_SECTION
 	if [ "${1}" = "-p" ] ; then
 		MY_PRIORITY=${2}
 		shift
@@ -103,11 +103,11 @@ pkgos_read_config () {
 		MY_PRIORITY=high
 	fi
 	CONF_PATH=${1}
-	SECTION=${2}
+	READ_CONFIG_SECTION=${2}
 	DIRECTIVE=${3}
 	DEBCONF_NAME=${4}
 
-	pkgos_inifile get ${CONF_PATH} ${SECTION} ${DIRECTIVE}
+	pkgos_inifile get ${CONF_PATH} ${READ_CONFIG_SECTION} ${DIRECTIVE}
 	if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
 		db_set ${DEBCONF_NAME} ${RET}
 	fi
@@ -292,9 +292,9 @@ pkgos_dbc_postinst () {
 # pkgos_read_admin_creds /etc/glance/glance-api.conf glance keystone_authtoken
 # To be used in: config
 pkgos_read_admin_creds () {
-	local CONF_FNAME PKG_NAME SECTION
+	local CONF_FNAME PKG_NAME MY_SEARCH_SECTION
 	CONF_FNAME=${1}
-	SECTION=${2}
+	MY_SEARCH_SECTION=${2}
 	PKG_NAME=${3}
 
 	if [ ! -r "${CONF_FNAME}" ] ; then
@@ -302,11 +302,11 @@ pkgos_read_admin_creds () {
 		db_input high ${PKG_NAME}/auth-host || true
 	else
 		if grep -q auth_host ${CONF_FNAME} ; then
-			pkgos_read_config ${CONF_FNAME} ${SECTION} auth_host ${PKG_NAME}/auth-host
+			pkgos_read_config ${CONF_FNAME} ${MY_SEARCH_SECTION} auth_host ${PKG_NAME}/auth-host
 		else
 			# This is needed for l3_agent.ini
 			if grep -q auth_url ${CONF_FNAME} ; then
-				pkgos_inifile get ${CONF_FNAME} ${SECTION} auth_url
+				pkgos_inifile get ${CONF_FNAME} ${MY_SEARCH_SECTION} auth_url
 				if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
 					NO_PROTO=${RET#http://}
 					BEFORE_PORT=$(echo ${NO_PROTO} | cut -d":" -f1)
@@ -322,40 +322,40 @@ pkgos_read_admin_creds () {
 		fi
 	fi
 
-        pkgos_read_config -p medium ${CONF_FNAME} ${SECTION} admin_tenant_name ${PKG_NAME}/admin-tenant-name
-        pkgos_read_config -p medium ${CONF_FNAME} ${SECTION} admin_user ${PKG_NAME}/admin-user
-        pkgos_read_config ${CONF_FNAME} ${SECTION} admin_password ${PKG_NAME}/admin-password
+        pkgos_read_config -p medium ${CONF_FNAME} ${MY_SEARCH_SECTION} admin_tenant_name ${PKG_NAME}/admin-tenant-name
+        pkgos_read_config -p medium ${CONF_FNAME} ${MY_SEARCH_SECTION} admin_user ${PKG_NAME}/admin-user
+        pkgos_read_config ${CONF_FNAME} ${MY_SEARCH_SECTION} admin_password ${PKG_NAME}/admin-password
 }
 
 # To be used in: postinst
 pkgos_write_admin_creds () {
-	local CONF_FNAME PKG_NAME SECTION
+	local CONF_FNAME PKG_NAME WRITE_CRED_SECTION
 	CONF_FNAME=${1}
-	SECTION=${2}
+	WRITE_CRED_SECTION=${2}
 	PKG_NAME=${3}
 
 	db_get ${PKG_NAME}/auth-host
 	AUTH_HOST=${RET}
 	if grep -q auth_host ${CONF_FNAME} ; then
-		pkgos_inifile set ${CONF_FNAME} ${SECTION} ${RET}
+		pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} ${RET}
 	else
 		# This is needed for l3_agent.ini
 		if grep -q auth_url ${CONF_FNAME} ; then
-			pkgos_inifile get ${CONF_FNAME} ${SECTION} auth_url
+			pkgos_inifile get ${CONF_FNAME} ${WRITE_CRED_SECTION} auth_url
 			NO_PROTO=${RET#http://}
 			AFTER_PORT=$(echo ${NO_PROTO} | cut -d":" -f2)
 			URL="http://${AUTH_HOST}:${AFTER_PORT}"
-			pkgos_inifile set ${CONF_FNAME} ${SECTION} auth_url ${URL}
+			pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} auth_url ${URL}
 		else
 			echo "Couldn't find either auth_host or auth_url :("
 		fi
 	fi
 	db_get ${PKG_NAME}/admin-tenant-name
-	pkgos_inifile set ${CONF_FNAME} ${SECTION} admin_tenant_name ${RET}
+	pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} admin_tenant_name ${RET}
 	db_get ${PKG_NAME}/admin-user
-	pkgos_inifile set ${CONF_FNAME} ${SECTION} admin_user ${RET}
+	pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} admin_user ${RET}
 	db_get ${PKG_NAME}/admin-password
-	pkgos_inifile set ${CONF_FNAME} ${SECTION} admin_password ${RET}
+	pkgos_inifile set ${CONF_FNAME} ${WRITE_CRED_SECTION} admin_password ${RET}
 }
 
 pkgos_write_new_conf () {
