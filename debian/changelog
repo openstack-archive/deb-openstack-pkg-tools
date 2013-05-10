@@ -1,3 +1,13 @@
+openstack-pkg-tools (5) unstable; urgency=low
+
+  * Uploading to SID.
+  * Split the get-vcs-source: into 3 targets:
+    - fetch-upstream-remote:
+    - gen-orig-xz:
+    - +get-master-branch:
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 May 2013 18:14:51 +0800
+
 openstack-pkg-tools (4) experimental; urgency=low
 
   * Clean-ups of function parameter calling order.
