@@ -3,6 +3,7 @@ openstack-pkg-tools (6) unstable; urgency=low
   * Removed the -R flag when doing chown -R /var/lib/<package>.
   * Extracted the adduser / addgroup function from pkgos_var_user_group as a
     separate (callable) function.
+  * Bumped standard-version to 3.9.4.
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 30 May 2013 23:52:11 +0800
 
