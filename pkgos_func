@@ -6,6 +6,56 @@ pkgos_gen_pass () {
 	echo ${i% *}
 }
 
+# This function removes a section, because we need that in the case
+# of an upgrade from one version to the next. It is for example
+# needed for keystone to upgrade from Grizzly to Havana.
+# Params:
+#    $1 Init file path
+#    $2 Section to remove
+pkgos_remove_section () {
+	local REMOVESEC_INIFILE REMOVESEC_SEARCH_SECTION REMOVESEC_INIFILE_CNT REMOVESEC_LINE REMOVESEC_FOUND_SECTION REMOVESEC_START_LINE REMOVESEC_END_LINE
+	REMOVESEC_INIFILE=${1}
+	REMOVESEC_SEARCH_SECTION=${2}
+	if [ ! -r ${REMOVESEC_INIFILE} ] ; then return ; fi
+
+	# Iterate through all lines of the file to search for section start/end line number
+	REMOVESEC_INIFILE_CNT=0
+	REMOVESEC_FOUND_SECTION=""
+	REMOVESEC_START_LINE=""
+	REMOVESEC_END_LINE=""
+	while read REMOVESEC_LINE ; do
+		REMOVESEC_INIFILE_CNT=$((${REMOVESEC_INIFILE_CNT} + 1 ))
+		if echo ${REMOVESEC_LINE} | grep -q '^[ \t]*\[.*\][ \t]*$' ; then
+			REMOVESEC_FOUND_SECTION=`echo ${REMOVESEC_LINE} | sed -e 's/\[//' | sed -e 's/\]//'`
+			echo "Found section: ${REMOVESEC_FOUND_SECTION}"
+			if [ "${REMOVESEC_FOUND_SECTION}" = "${REMOVESEC_SEARCH_SECTION}" ] ; then
+				REMOVESEC_START_LINE=$(( ${REMOVESEC_INIFILE_CNT} - 1 ))
+			else
+				if [ -n "${REMOVESEC_START_LINE}" ] && [ -z "${REMOVESEC_END_LINE}" ] ; then
+					REMOVESEC_END_LINE=$(( ${REMOVESEC_INIFILE_CNT} -1 ))
+				fi
+			fi
+		fi
+	done < ${REMOVESEC_INIFILE}
+
+
+	# Case where the section is last in the file
+	if [ -n "${REMOVESEC_START_LINE}" ] && [ -z "${REMOVESEC_END_LINE}" ] ; then
+		REMOVESEC_END_LINE=${REMOVESEC_INIFILE_CNT}
+	fi
+
+	# Section found, remove it!
+	if [ -n "${REMOVESEC_START_LINE}" ] && [ -n "${REMOVESEC_END_LINE}" ] ; then
+		REMOVESEC_CONF_LINES_NUM=`wc -l ${REMOVESEC_INIFILE} | cut -d" " -f1`
+		REMOVESEC_CUT_END=$((${REMOVESEC_CONF_LINES_NUM} - ${REMOVESEC_END_LINE} ))
+		REMOVESEC_TMPFILE=`mktemp -t pkgos_removesec.XXXXXX`
+		head -n ${REMOVESEC_START_LINE} ${REMOVESEC_INIFILE} >${REMOVESEC_TMPFILE}
+		tail -n ${REMOVESEC_CUT_END} ${REMOVESEC_INIFILE} >>${REMOVESEC_TMPFILE}
+		cat <${REMOVESEC_TMPFILE} >${REMOVESEC_INIFILE}
+		rm ${REMOVESEC_TMPFILE}
+	fi
+}
+
 # Using sed to set passwords with arguments on the command line makes
 # it possible to see the new passwords using ps. This function creates
 # a temp file which is used as a script for sed (using the -f option).
@@ -15,13 +65,13 @@ pkgos_gen_pass () {
 #    $1 Sed script to replace values in a config file
 #    $2 Config file to change
 pkgos_safesed () {
-	local SED_SCRIPT CONFIG_FILENAME SAFESED_TMPFILE SAFESED_TMPFILE
-	SED_SCRIPT=${1}
-	CONFIG_FILENAME=${2}
+	local SAFESED_SCRIPT SAFESED_CONFIG_FILENAME SAFESED_TMPFILE
+	SAFESED_SCRIPT=${1}
+	SAFESED_CONFIG_FILENAME=${2}
 
 	SAFESED_TMPFILE=`mktemp -t pkgos_safe_sed.XXXXXX`
-	echo "${SED_SCRIPT}" >${SAFESED_TMPFILE}
-	sed -i -f ${SAFESED_TMPFILE} ${CONFIG_FILENAME}
+	echo "${SAFESED_SCRIPT}" >${SAFESED_TMPFILE}
+	sed -i -f ${SAFESED_TMPFILE} ${SAFESED_CONFIG_FILENAME}
 	rm ${SAFESED_TMPFILE}
 }
 

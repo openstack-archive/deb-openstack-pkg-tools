@@ -3,6 +3,7 @@ openstack-pkg-tools (7) UNRELEASED; urgency=low
   * Adds a pkgos_safesed function which doesn't put the (eventual) passwords
     visible using "ps", which makes it safe to use sed for passwords. Then
     pkgos_inifile uses that function now.
+  * Added a function to remove a [SECTION] in a config file.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 11 Jun 2013 11:58:32 +0800
 
