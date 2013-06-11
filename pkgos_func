@@ -6,6 +6,25 @@ pkgos_gen_pass () {
 	echo ${i% *}
 }
 
+# Using sed to set passwords with arguments on the command line makes
+# it possible to see the new passwords using ps. This function creates
+# a temp file which is used as a script for sed (using the -f option).
+# This is safe because what's put in the file is done with echo, which
+# is a built-in shell command, so it will not appear in /proc.
+# Params:
+#    $1 Sed script to replace values in a config file
+#    $2 Config file to change
+pkgos_safesed () {
+	local SED_SCRIPT CONFIG_FILENAME SAFESED_TMPFILE SAFESED_TMPFILE
+	SED_SCRIPT=${1}
+	CONFIG_FILENAME=${2}
+
+	SAFESED_TMPFILE=`mktemp -t pkgos_safe_sed.XXXXXX`
+	echo "${SED_SCRIPT}" >${SAFESED_TMPFILE}
+	sed -i -f ${SAFESED_TMPFILE} ${CONFIG_FILENAME}
+	rm ${SAFESED_TMPFILE}
+}
+
 # Params: $1 = set or get (set means read mode and return a directive value, get means write a new value in it)
 #         $2 = config file path (example: /etc/nova/nova.conf)
 #         $3 = .ini file section (example: DEFAULT)
@@ -69,12 +88,12 @@ pkgos_inifile () {
 				if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then
 					if [ "${DIRECTIVE_TYPE}" = "equal" ] ; then
 						if [ "${INIFILE_SHELL_INCLUDE}" = "yes" ] ; then
-							sed -i ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}'='${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
+							pkgos_safesed ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}'='${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
 						else
-							sed -i ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}' = '${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
+							pkgos_safesed ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}' = '${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
 						fi
 					else
-						sed -i ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}': '${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
+						pkgos_safesed ${INIFILE_CNT}' s|.*|'${INIFILE_DIRECTIVE}': '${INIFILE_NEW_VALUE}'|' ${INIFILE_MYCONFIG}
 					fi
 				fi
 				return
