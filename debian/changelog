@@ -1,3 +1,10 @@
+openstack-pkg-tools (8) UNRELEASED; urgency=low
+
+  * Allow the upstart thing to also work with package.daemon.upstart.in
+    (replaced the cut -d by a sed s/.upstart.in//).
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 28 Jun 2013 16:18:55 +0800
+
 openstack-pkg-tools (7) unstable; urgency=low
 
   * Adds a pkgos_safesed function which doesn't put the (eventual) passwords
