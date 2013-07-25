@@ -2,6 +2,8 @@ openstack-pkg-tools (8) UNRELEASED; urgency=low
 
   * Allow the upstart thing to also work with package.daemon.upstart.in
     (replaced the cut -d by a sed s/.upstart.in//).
+  * Adds a git show in the gen-orig-xz, to check if the tag exists before
+    creating the orig.tar.xz.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 28 Jun 2013 16:18:55 +0800
 
