@@ -55,7 +55,7 @@ fetch-upstream-remote:
 gen-orig-xz:
 	git show $(GIT_TAG) | cat
 	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] ; then \
-		git archive --prefix=$(DEBPKGNAME)-$(GIT_TAG)/ $(GIT_TAG) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
+		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(GIT_TAG) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
 	fi
 	[ ! -e ../build-area ] && mkdir ../build-area || true
 	[ ! -e ../build-area/$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] && cp ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ../build-area
