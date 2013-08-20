@@ -183,6 +183,45 @@ pkgos_read_config () {
 	db_get ${READ_CONFIG_DEBCONF_NAME}
 }
 
+# Read the current configuration for rabbitMQ and sets that into debconf
+# Params: $1 Path to config file
+#         $2 Section in the config file
+#         $3 prefix for the debconf template (eg: if we have nova/rabbit_host, then use "nova")
+# To be used in: config
+# Example call: pkgos_rabbit_read_conf /etc/nova/nova.conf DEFAULT nova
+pkgos_rabbit_read_conf () {
+	local RB_CONF_PATH RB_SECTION RB_DEBCONF_PREFIX
+	RB_CONF_PATH=${1}
+	RB_SECTION=${2}
+	RB_DEBCONF_PREFIX=${3}
+
+	pkgos_read_config ${RB_CONF_PATH} ${RB_SECTION} rabbit_host ${RB_DEBCONF_PREFIX}/rabbit_host
+	pkgos_read_config ${RB_CONF_PATH} ${RB_SECTION} rabbit_userid ${RB_DEBCONF_PREFIX}/rabbit_userid
+	pkgos_read_config ${RB_CONF_PATH} ${RB_SECTION} rabbit_password ${RB_DEBCONF_PREFIX}/rabbit_password
+}
+
+# Write the configuration for rabbitMQ
+# Params: $1 Path to config file
+#         $2 Section in the config file
+#         $3 prefix for the debconf template (eg: if we have nova/rabbit_host, then use "nova")
+# To be used in: postinst
+# Example call: pkgos_rabbit_write_conf /etc/nova/nova.conf DEFAULT nova
+pkgos_rabbit_write_conf () {
+	local RB_CONF_PATH RB_SECTION RB_DEBCONF_PREFIX
+	RB_CONF_PATH=${1}
+	RB_SECTION=${2}
+	RB_DEBCONF_PREFIX=${3}
+
+	db_get ${RB_DEBCONF_PREFIX}/rabbit_host
+	pkgos_inifile set ${RB_CONF_PATH} ${RB_SECTION} rabbit_host ${RET}
+
+	db_get ${RB_DEBCONF_PREFIX}/rabbit_userid
+	pkgos_inifile set ${RB_CONF_PATH} ${RB_SECTION} rabbit_userid ${RET}
+
+	db_get ${RB_DEBCONF_PREFIX}/rabbit_password
+	pkgos_inifile set ${RB_CONF_PATH} ${RB_SECTION} rabbit_password ${RET}
+}
+
 # Read the connection directive from a config file
 # and fills the dbc_* variable accordingly,
 # then call dbconfig to do the actual configuration.
