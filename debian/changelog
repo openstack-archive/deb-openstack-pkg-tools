@@ -1,4 +1,4 @@
-openstack-pkg-tools (8) UNRELEASED; urgency=low
+openstack-pkg-tools (8) unstable; urgency=low
 
   * Allow the upstart thing to also work with package.daemon.upstart.in
     (replaced the cut -d by a sed s/.upstart.in//).
