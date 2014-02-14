@@ -5,9 +5,8 @@ openstack-pkg-tools (8) unstable; urgency=low
   * Adds a git show in the gen-orig-xz, to check if the tag exists before
     creating the orig.tar.xz.
   * Added functions to automatically configure rabbit_* directives.
-  * Updated VCS field to git.gplhost.com.
 
- -- Thomas Goirand <zigo@debian.org>  Wed, 20 Nov 2013 19:57:56 +0800
+ -- Thomas Goirand <zigo@debian.org>  Fri, 28 Jun 2013 16:18:55 +0800
 
 openstack-pkg-tools (7) unstable; urgency=low
 
