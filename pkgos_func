@@ -596,9 +596,9 @@ pkgos_register_endpoint_postinst () {
 
 		if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${AUTH_TOKEN}" ] ; then
 			echo "Registering service and endpoints for ${SERVICE_NAME} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
-			PKG_SERVICE_ID=$(pkgos_get_id keystone --token ${AUTH_TOKEN} --endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ service-create \
+			PKG_SERVICE_ID=$(pkgos_get_id keystone --os-token ${AUTH_TOKEN} --os-endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ service-create \
 				--name=${SERVICE_NAME} --type=${SERVICE_TYPE} --description="${SERVICE_DESC}")
-			PKG_ENDPOINT_ID=$(pkgos_get_id keystone --token ${AUTH_TOKEN} --endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ endpoint-create \
+			PKG_ENDPOINT_ID=$(pkgos_get_id keystone --os-token ${AUTH_TOKEN} --os-endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ endpoint-create \
 				--region "${REGION_NAME}" --service_id=${PKG_SERVICE_ID} \
 				--publicurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
 				--internalurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
