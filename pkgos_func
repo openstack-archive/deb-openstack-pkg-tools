@@ -313,6 +313,8 @@ pkgos_dbc_read_conf () {
 				dbc_dbserver=${PARSED_SERVER}
 				dbc_dbport=${PARSED_PORT}
 				dbc_dbname=${PARSED_DB_NAME}
+				dbc_mysql_createdb_encoding="UTF8"
+				dbc_pgsql_createdb_encoding="UTF8"
 			fi
 			if [ "${PARSED_DB_TYPE}" = "mysql" ] ; then
 				dbc_dbtypes="mysql, pgsql, sqlite3"

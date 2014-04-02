@@ -1,3 +1,9 @@
+openstack-pkg-tools (10) unstable; urgency=medium
+
+  * Now using dbc_{pg,my}sql_createdb_encoding="UTF8" when creating dbs.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 02 Apr 2014 22:10:33 +0800
+
 openstack-pkg-tools (9) unstable; urgency=medium
 
   * Fixed keystone endpoint registration for the new keystone command line
