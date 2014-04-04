@@ -53,7 +53,7 @@ fetch-upstream-remote:
 	git fetch upstream
 
 gen-orig-xz:
-	git tag -v $(GIT_TAG)
+	git tag -v $(GIT_TAG) || true
 	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] ; then \
 		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(GIT_TAG) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
 	fi
