@@ -1,6 +1,7 @@
 openstack-pkg-tools (10) unstable; urgency=medium
 
   * Now using dbc_{pg,my}sql_createdb_encoding="UTF8" when creating dbs.
+  * Standards-Version: is now 3.9.5.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 02 Apr 2014 22:10:33 +0800
 
