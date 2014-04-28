@@ -30,7 +30,7 @@ gen-author-list:
 	git log --format='%aN <%aE>' | awk '{arr[$$0]++} END{for (i in arr){print arr[i], i;}}' | sort -rn | cut -d' ' -f2-
 
 gen-upstream-changelog:
-	git checkout master
+	git checkout master || git checkout upstream/master
 	git reset --hard $(GIT_TAG)
 	git log >$(CURDIR)/../CHANGELOG
 	git checkout debian/$(DEBFLAVOR)
