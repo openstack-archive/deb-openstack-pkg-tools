@@ -313,8 +313,6 @@ pkgos_dbc_read_conf () {
 				dbc_dbserver=${PARSED_SERVER}
 				dbc_dbport=${PARSED_PORT}
 				dbc_dbname=${PARSED_DB_NAME}
-				dbc_mysql_createdb_encoding="UTF8"
-				dbc_pgsql_createdb_encoding="UTF8"
 			fi
 			if [ "${PARSED_DB_TYPE}" = "mysql" ] ; then
 				dbc_dbtypes="mysql, pgsql, sqlite3"
@@ -323,6 +321,8 @@ pkgos_dbc_read_conf () {
 			fi
 			dbc_authmethod_user="password"
 		fi
+		dbc_mysql_createdb_encoding="UTF8"
+		dbc_pgsql_createdb_encoding="UTF8"
 		echo "PKG-Openstack now calling: dbc_go "${DPKG_MAINTSCRIPT_PACKAGE} $@
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
 	fi
