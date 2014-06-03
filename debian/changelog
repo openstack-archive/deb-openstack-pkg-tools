@@ -1,3 +1,9 @@
+openstack-pkg-tools (12) unstable; urgency=medium
+
+  * Now sets dbc_{pg,my}sql_createdb_encoding="UTF8" in postinst.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 03 Jun 2014 14:48:40 +0800
+
 openstack-pkg-tools (11) unstable; urgency=medium
 
   * Really fix dbc_{pg,my}sql_createdb_encoding="UTF8".

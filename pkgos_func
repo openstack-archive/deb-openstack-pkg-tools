@@ -369,6 +369,8 @@ pkgos_dbc_postinst () {
 	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
 		. /usr/share/dbconfig-common/dpkg/postinst
 		dbc_dbfile_owner="${SUITE}:${SUITE}"
+		dbc_mysql_createdb_encoding="UTF8"
+		dbc_pgsql_createdb_encoding="UTF8"
 		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
 		if [ "$dbc_install" = "true" ] ; then
 			case "$dbc_dbtype" in
