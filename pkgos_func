@@ -346,7 +346,7 @@ password=${MYSQL_DBPASS}" >${MYSQL_P_TMP}
 	if [ -n "${MYSQL_DBPORT}" ] ; then
 		MY_PORT="--port=${MYSQL_DBPORT}"
 	fi
-	mysql -h${MYSQL_DBHOST} ${MY_PORT} -u${MYSQL_DBUSER} -D${MYSQL_DBNAME} --defaults-file=${MYSQL_P_TMP} < ${MYSQL_Q_TMP}
+	mysql --defaults-file=${MYSQL_P_TMP} -h${MYSQL_DBHOST} ${MY_PORT} -u${MYSQL_DBUSER} -D${MYSQL_DBNAME} < ${MYSQL_Q_TMP}
 	rm -f ${MYSQL_Q_TMP} ${MYSQL_P_TMP}
 }
 
