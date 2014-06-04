@@ -328,6 +328,29 @@ pkgos_dbc_read_conf () {
 	fi
 }
 
+# Perform a MySQL query in a safe way (eg: no password or queries in the command line)
+pkgos_mysql_query () {
+	local MYSQL_Q_TMP MYSQL_P_TMP MYSQL_DBUSER MYSQL_DBPASS MYSQL_DBHOST MYSQL_DBPORT MYSQL_DBNAME MYSQL_QUERY MY_PORT
+	MYSQL_DBUSER=${1}
+	MYSQL_DBPASS=${2}
+	MYSQL_DBHOST=${3}
+	MYSQL_DBPORT=${4}
+	MYSQL_DBNAME=${5}
+	MYSQL_QUERY=${6}
+
+	MYSQL_P_TMP=`mktemp -t OpenStack-mysql-statement.XXXXXXXXXX`
+	MYSQL_Q_TMP=`mktemp -t OpenStack-mysql-statement.XXXXXXXXXX`
+	echo "[client]
+password=${MYSQL_DBPASS}" >${MYSQL_P_TMP}
+	echo ${MYSQL_QUERY} >${MYSQL_Q_TMP}
+	if [ -n "${MYSQL_DBPORT}" ] ; then
+		MY_PORT="--port=${MYSQL_DBPORT}"
+	fi
+	mysql -h${MYSQL_DBHOST} ${MY_PORT} -u${MYSQL_DBUSER} -D${MYSQL_DBNAME} --defaults-file=${MYSQL_P_TMP} <
+	rm -f ${MYSQL_Q_TMP} ${MYSQL_P_TMP}
+}
+
+
 # Read values configured by dbconfig-common,
 # and set a connection directive accordingly
 # in a configuration file
@@ -379,6 +402,9 @@ pkgos_dbc_postinst () {
 						dbport=:$dbc_dbport
 					fi
 					SQL_CONNECTION="mysql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
+					# Set the DB as UTF8
+					Q="ALTER DATABASE ${dbc_dbname} CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+					pkgos_mysql_query ${dbc_dbuser} ${dbc_dbpass} ${dbc_dbserver:-localhost} "${dbport}" ${dbc_dbname} ${Q}
 					;;
 				postgresql*|pgsql)
 					if [ -n "$dbc_dbport" ] ; then
