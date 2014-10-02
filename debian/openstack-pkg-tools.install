@@ -2,4 +2,4 @@ pkgos.make /usr/share/openstack-pkg-tools
 pkgos_func /usr/share/openstack-pkg-tools
 pkgos_insert_include /usr/share/openstack-pkg-tools
 init-template/init-script-template	/usr/share/openstack-pkg-tools
-init-template/gen-systemd-unit		/usr/bin/openstack-pkg-tools-gen-systemd-unit
+init-template/pkgos-gen-systemd-unit	/usr/bin
