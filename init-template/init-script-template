@@ -1,4 +1,17 @@
-DAEMON=/usr/bin/${NAME}
+#!/bin/sh
+# The content after this line comes from openstack-pkg-tools
+# and has been automatically added to a .init.in script, which
+# contains only the descriptive part for the daemon. Everything
+# else is standardized as a single unique script.
+
+# Author: Thomas Goirand <zigo@debian.org>
+
+# PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+if [ -z "${DAEMON}" ] ; then
+	DAEMON=/usr/bin/${NAME}
+fi
 PIDFILE=/var/run/${PROJECT_NAME}/${NAME}.pid
 SCRIPTNAME=/etc/init.d/${NAME}
 SYSTEM_USER=${PROJECT_NAME}
