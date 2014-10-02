@@ -1,3 +1,10 @@
+openstack-pkg-tools (13) experimental; urgency=medium
+
+  * Added init script templating.
+  * Uploading to experimental during the freeze.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 03 Oct 2014 01:07:53 +0800
+
 openstack-pkg-tools (12) unstable; urgency=medium
 
   * Now setting-up database with ALTER DATABASE to use UTF8 instead of the dbc

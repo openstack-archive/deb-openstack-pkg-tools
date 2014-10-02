@@ -24,6 +24,11 @@ override_dh_installinit:
 			cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
 		done ; \
         fi
+	for i in `ls -1 debian/*.init.in` ; do \
+		MYINIT=`echo $$i | sed s/.init.in//` ; \
+		cp $$i $$MYINIT.init ; \
+		cat /usr/share/openstack-pkg-tools/init-script-template >>$$MYINIT.init ; \
+	done
 	dh_installinit --error-handler=true
 
 gen-author-list:

@@ -1,0 +1,78 @@
+DAEMON=/usr/bin/${NAME}
+PIDFILE=/var/run/${PROJECT_NAME}/${NAME}.pid
+SCRIPTNAME=/etc/init.d/${NAME}
+SYSTEM_USER=${PROJECT_NAME}
+SYSTEM_GROUP=${PROJECT_NAME}
+LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
+DAEMON_ARGS="--config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
+
+# Exit if the package is not installed
+[ -x $DAEMON ] || exit 0
+
+mkdir -p ${LOCK_DIR} /var/run/${PROJECT_NAME} /var/log/${PROJECT_NAME}
+chown ${SYSTEM_USER} ${LOCK_DIR} /var/run/${PROJECT_NAME} /var/log/${PROJECT_NAME}
+
+. /lib/lsb/init-functions
+
+# Manage log options
+[ -r /etc/default/openstack ] && . /etc/default/openstack
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+[ "x$USE_SYSLOG" = "xyes" ] && DAEMON_ARGS="$DAEMON_ARGS --use-syslog"
+[ "x$USE_LOGFILE" != "xno" ] && DAEMON_ARGS="$DAEMON_ARGS --log-file=$LOGFILE"
+
+do_start() {
+	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/run --startas $DAEMON \
+			--test > /dev/null || return 1
+	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/run --startas $DAEMON \
+			-- $DAEMON_ARGS || return 2
+}
+
+do_stop() {
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
+	RETVAL=$?
+	rm -f $PIDFILE
+	return "$RETVAL"
+}
+
+case "$1" in
+start)
+	log_daemon_msg "Starting $DESC" "$NAME"
+	do_start
+	case $? in
+		0|1) log_end_msg 0 ;;
+		2) log_end_msg 1 ;;
+	esac
+;;
+stop)
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	do_stop
+	case $? in
+		0|1) log_end_msg 0 ;;
+		2) log_end_msg 1 ;;
+	esac
+;;
+status)
+	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+;;
+restart|force-reload)
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	do_stop
+	case $? in
+	0|1)
+		do_start
+		case $? in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		esac
+	;;
+	*) log_end_msg 1 ;; # Failed to stop
+	esac
+;;
+*)
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	exit 3
+;;
+esac
+
+exit 0
