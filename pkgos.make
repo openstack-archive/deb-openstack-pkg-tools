@@ -28,6 +28,10 @@ override_dh_installinit:
 		MYINIT=`echo $$i | sed s/.init.in//` ; \
 		cp $$i $$MYINIT.init ; \
 		cat /usr/share/openstack-pkg-tools/init-script-template >>$$MYINIT.init ; \
+		pkgos-gen-systemd-unit $$i ; \
+	done
+	for i in `ls debian/*.init.in` ; do \
+		pkgos-gen-systemd-unit $$i ; \
 	done
 	dh_installinit --error-handler=true
 
