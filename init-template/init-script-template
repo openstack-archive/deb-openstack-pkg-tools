@@ -67,6 +67,12 @@ stop)
 status)
 	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
 ;;
+systemd-start)
+	do_start
+;;  
+systemd-stop)
+	do_stop
+;;
 restart|force-reload)
 	log_daemon_msg "Restarting $DESC" "$NAME"
 	do_stop
@@ -83,7 +89,7 @@ restart|force-reload)
 	esac
 ;;
 *)
-	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload|systemd-start|systemd-stop}" >&2
 	exit 3
 ;;
 esac
