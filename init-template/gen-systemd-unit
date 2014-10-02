@@ -1,0 +1,34 @@
+#!/bin/sh
+
+INIT_TEMPLATE=${1}
+SERVICE_FILE=`echo ${INIT_TEMPLATE} | sed 's/.init.in/.service/'`
+
+# Get the variables defined in the init template
+. ${INIT_TEMPLATE}
+
+# Find out what should go in After=
+SHOULD_START=`cat ${INIT_TEMPLATE} | grep "# Should-Start:" | sed 's/# Should-Start://'`
+
+if [ -n "${SHOULD_START}" ] ; then
+	AFTER="After="
+	for i in ${SHOULD_START} ; do
+		AFTER="${AFTER}${i}.service "
+	done
+fi
+
+echo "[Unit]
+Description=${DESC}
+$AFTER
+
+[Service]
+User=${PROJECT_NAME}
+Group=${PROJECT_NAME}
+ExecStart=/etc/init.d/${NAME} systemd-start
+ExecStop=/etc/init.d/${NAME} systemd-stop
+PIDFile=/var/run/${PROJECT_NAME}/${NAME}.pid
+Restart=on-failure
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
+" >${SERVICE_FILE}
