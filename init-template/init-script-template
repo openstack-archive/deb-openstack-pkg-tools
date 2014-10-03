@@ -22,21 +22,25 @@ DAEMON_ARGS="--config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
 # Exit if the package is not installed
 [ -x $DAEMON ] || exit 0
 
-mkdir -p ${LOCK_DIR} /var/run/${PROJECT_NAME} /var/log/${PROJECT_NAME}
-chown ${SYSTEM_USER} ${LOCK_DIR} /var/run/${PROJECT_NAME} /var/log/${PROJECT_NAME}
+# Create /var/lock/X, /var/run/X, /var/lib/X and /var/log/X
+for i in lock run log lib ; do
+	mkdir -p /var/$i/${PROJECT_NAME}
+	chown ${SYSTEM_USER} /var/$i/${PROJECT_NAME}
+done
 
+# This defines init_is_upstart which we use later on (+ more...)
 . /lib/lsb/init-functions
 
-# Manage log options
+# Manage log options: logfile and/or syslog, depending on user's choosing
 [ -r /etc/default/openstack ] && . /etc/default/openstack
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 [ "x$USE_SYSLOG" = "xyes" ] && DAEMON_ARGS="$DAEMON_ARGS --use-syslog"
 [ "x$USE_LOGFILE" != "xno" ] && DAEMON_ARGS="$DAEMON_ARGS --log-file=$LOGFILE"
 
 do_start() {
-	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/run --startas $DAEMON \
+	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \
 			--test > /dev/null || return 1
-	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/run --startas $DAEMON \
+	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \
 			-- $DAEMON_ARGS || return 2
 }
 
@@ -49,6 +53,7 @@ do_stop() {
 
 case "$1" in
 start)
+	init_is_upstart > /dev/null 2>&1 && exit 1
 	log_daemon_msg "Starting $DESC" "$NAME"
 	do_start
 	case $? in
@@ -57,6 +62,7 @@ start)
 	esac
 ;;
 stop)
+	init_is_upstart > /dev/null 2>&1 && exit 0
 	log_daemon_msg "Stopping $DESC" "$NAME"
 	do_stop
 	case $? in
@@ -74,6 +80,7 @@ systemd-stop)
 	do_stop
 ;;
 restart|force-reload)
+	init_is_upstart > /dev/null 2>&1 && exit 1
 	log_daemon_msg "Restarting $DESC" "$NAME"
 	do_stop
 	case $? in

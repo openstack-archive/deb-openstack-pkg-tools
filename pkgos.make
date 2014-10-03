@@ -14,24 +14,32 @@ DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f
 override_dh_builddeb:
 	dh_builddeb -- -Zxz -z9
 
-# Only use upstart scripts in Ubuntu. All .upstart files have to be renamed .upstart.in
-# NOTE: this is actually no longer required as the debhelper in wheezy and Ubuntu just
-# do the right things now but this needs to be retained for compatibility
 override_dh_installinit:
+	# If we're building under Ubuntu and there's some .upstart.in files
+	# then we just use that...
 	if dpkg-vendor --derives-from ubuntu ; then \
 		for i in `ls -1 debian/*.upstart.in` ; do \
 			MYPKG=`echo $$i | sed s/.upstart.in//` ; \
 			cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
 		done ; \
-        fi
+	fi
+	# Create the init scripts from the template
 	for i in `ls -1 debian/*.init.in` ; do \
 		MYINIT=`echo $$i | sed s/.init.in//` ; \
 		cp $$i $$MYINIT.init ; \
 		cat /usr/share/openstack-pkg-tools/init-script-template >>$$MYINIT.init ; \
 		pkgos-gen-systemd-unit $$i ; \
 	done
+	# Generate the systemd unit file
 	for i in `ls debian/*.init.in` ; do \
 		pkgos-gen-systemd-unit $$i ; \
+	done
+	# Generate the upstart job if there's no already existing .upstart.in
+	for i in `ls debian/*.init.in` ; do \
+		MYINIT=`echo $$i | sed s/.init.in/.upstart.in/` ; \
+		if ! [ -e $$MYINIT ] ; then \
+			pkgos-gen-upstart-job $$i ; \
+		fi \
 	done
 	dh_installinit --error-handler=true
 

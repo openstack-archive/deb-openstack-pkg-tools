@@ -1,0 +1,55 @@
+#!/bin/sh
+
+INIT_TEMPLATE=${1}
+UPSTART_FILE=`echo ${INIT_TEMPLATE} | sed 's/.init.in/.upstart/'`
+
+# Get the variables defined in the init template
+. ${INIT_TEMPLATE}
+
+## Find out what should go in After=
+#SHOULD_START=`cat ${INIT_TEMPLATE} | grep "# Should-Start:" | sed 's/# Should-Start://'`
+#
+#if [ -n "${SHOULD_START}" ] ; then
+#	AFTER="After="
+#	for i in ${SHOULD_START} ; do
+#		AFTER="${AFTER}${i}.service "
+#	done
+#fi
+
+if [ -z "${DAEMON}" ] ; then
+	DAEMON=/usr/bin/${NAME}
+fi
+PIDFILE=/var/run/${PROJECT_NAME}/${NAME}.pid
+SCRIPTNAME=/etc/init.d/${NAME}
+SYSTEM_USER=${PROJECT_NAME}
+SYSTEM_GROUP=${PROJECT_NAME}
+LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
+
+echo "description \"${DESC}\"
+author \"Thomas Goirand <zigo@debian.org>\"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+chdir /var/run
+
+pre-start script
+	for i in lock run log lib ; do
+		mkdir -p /var/$i/${PROJECT_NAME}
+		chown ${SYSTEM_USER} /var/$i/${PROJECT_NAME}
+	done
+end script
+
+script
+	[ -r /etc/default/openstack ] && . /etc/default/openstack
+	[ -r /etc/default/\$UPSTART_JOB ] && . /etc/default/\$UPSTART_JOB
+	[ \"x\$USE_SYSLOG\" = \"xyes\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --use-syslog\"
+	[ \"x\$USE_LOGFILE\" != \"xno\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --log-file=${LOGFILE}\"
+
+	exec start-stop-daemon --start --chdir /var/lib/${PROJECT_NAME} \
+		--chuid ${SYSTEM_USER}:${SYSTEM_GROUP} \
+		--make-pidfile --pidfile ${PIDFILE}
+		--exec ${DAEMON} -- \
+		--config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf \${DAEMON_ARGS}
+end script
+" >${UPSTART_FILE}
