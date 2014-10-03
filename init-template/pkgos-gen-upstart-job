@@ -35,8 +35,8 @@ chdir /var/run
 
 pre-start script
 	for i in lock run log lib ; do
-		mkdir -p /var/$i/${PROJECT_NAME}
-		chown ${SYSTEM_USER} /var/$i/${PROJECT_NAME}
+		mkdir -p /var/\$i/${PROJECT_NAME}
+		chown ${SYSTEM_USER} /var/\$i/${PROJECT_NAME}
 	done
 end script
 
