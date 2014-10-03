@@ -17,7 +17,7 @@ SCRIPTNAME=/etc/init.d/${NAME}
 SYSTEM_USER=${PROJECT_NAME}
 SYSTEM_GROUP=${PROJECT_NAME}
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
-DAEMON_ARGS="--config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
+DAEMON_ARGS="${DAEMON_ARGS} --config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
 
 # Exit if the package is not installed
 [ -x $DAEMON ] || exit 0

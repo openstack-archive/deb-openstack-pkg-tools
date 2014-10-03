@@ -24,6 +24,7 @@ SCRIPTNAME=/etc/init.d/${NAME}
 SYSTEM_USER=${PROJECT_NAME}
 SYSTEM_GROUP=${PROJECT_NAME}
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
+DAEMON_ARGS="${DAEMON_ARGS} --config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
 
 echo "description \"${DESC}\"
 author \"Thomas Goirand <zigo@debian.org>\"
@@ -41,6 +42,7 @@ pre-start script
 end script
 
 script
+	DAEMON_ARGS="${DAEMON_ARGS}"
 	[ -r /etc/default/openstack ] && . /etc/default/openstack
 	[ -r /etc/default/\$UPSTART_JOB ] && . /etc/default/\$UPSTART_JOB
 	[ \"x\$USE_SYSLOG\" = \"xyes\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --use-syslog\"
