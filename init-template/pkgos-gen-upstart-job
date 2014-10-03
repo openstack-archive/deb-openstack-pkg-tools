@@ -46,10 +46,10 @@ script
 	[ \"x\$USE_SYSLOG\" = \"xyes\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --use-syslog\"
 	[ \"x\$USE_LOGFILE\" != \"xno\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --log-file=${LOGFILE}\"
 
-	exec start-stop-daemon --start --chdir /var/lib/${PROJECT_NAME} \
-		--chuid ${SYSTEM_USER}:${SYSTEM_GROUP} \
-		--make-pidfile --pidfile ${PIDFILE}
-		--exec ${DAEMON} -- \
+	exec start-stop-daemon --start --chdir /var/lib/${PROJECT_NAME} \\
+		--chuid ${SYSTEM_USER}:${SYSTEM_GROUP} \\
+		--make-pidfile --pidfile ${PIDFILE} \\
+		--exec ${DAEMON} -- \\
 		--config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf \${DAEMON_ARGS}
 end script
 " >${UPSTART_FILE}
