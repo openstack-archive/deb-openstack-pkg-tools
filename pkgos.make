@@ -15,14 +15,6 @@ override_dh_builddeb:
 	dh_builddeb -- -Zxz -z9
 
 override_dh_installinit:
-	# If we're building under Ubuntu and there's some .upstart.in files
-	# then we just use that...
-	if dpkg-vendor --derives-from ubuntu ; then \
-		for i in `ls -1 debian/*.upstart.in` ; do \
-			MYPKG=`echo $$i | sed s/.upstart.in//` ; \
-			cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
-		done ; \
-	fi
 	# Create the init scripts from the template
 	for i in `ls -1 debian/*.init.in` ; do \
 		MYINIT=`echo $$i | sed s/.init.in//` ; \
@@ -30,9 +22,10 @@ override_dh_installinit:
 		cat /usr/share/openstack-pkg-tools/init-script-template >>$$MYINIT.init ; \
 		pkgos-gen-systemd-unit $$i ; \
 	done
-	# Generate the systemd unit file
-	for i in `ls debian/*.init.in` ; do \
-		pkgos-gen-systemd-unit $$i ; \
+	# If there's an upstart.in file, use that one instead of the generated one
+	for i in `ls -1 debian/*.upstart.in` ; do \
+		MYPKG=`echo $$i | sed s/.upstart.in//` ; \
+		cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
 	done
 	# Generate the upstart job if there's no already existing .upstart.in
 	for i in `ls debian/*.init.in` ; do \
@@ -42,6 +35,10 @@ override_dh_installinit:
 		fi \
 	done
 	dh_installinit --error-handler=true
+	# Generate the systemd unit file
+	for i in `ls debian/*.init.in` ; do \
+		pkgos-gen-systemd-unit $$i ; \
+	done
 
 gen-author-list:
 	git log --format='%aN <%aE>' | awk '{arr[$$0]++} END{for (i in arr){print arr[i], i;}}' | sort -rn | cut -d' ' -f2-
