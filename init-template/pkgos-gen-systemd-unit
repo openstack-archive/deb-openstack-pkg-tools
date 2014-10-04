@@ -6,6 +6,16 @@ SERVICE_FILE=`echo ${INIT_TEMPLATE} | sed 's/.init.in/.service/'`
 # Get the variables defined in the init template
 . ${INIT_TEMPLATE}
 
+if [ -z "${SCRIPTNAME}" ] ; then
+	SCRIPTNAME=/etc/init.d/${NAME}
+fi
+if [ -z "${SYSTEM_USER}" ] ; then
+	SYSTEM_USER=${PROJECT_NAME}
+fi
+if [ -z "${SYSTEM_USER}" ] ; then
+	SYSTEM_GROUP=${PROJECT_NAME}
+fi
+
 # Find out what should go in After=
 SHOULD_START=`cat ${INIT_TEMPLATE} | grep "# Should-Start:" | sed 's/# Should-Start://'`
 
@@ -23,8 +33,8 @@ $AFTER
 [Service]
 User=${PROJECT_NAME}
 Group=${PROJECT_NAME}
-ExecStart=/etc/init.d/${NAME} systemd-start
-ExecStop=/etc/init.d/${NAME} systemd-stop
+ExecStart=${SCRIPTNAME} systemd-start
+ExecStop=${SCRIPTNAME} systemd-stop
 PIDFile=/var/run/${PROJECT_NAME}/${NAME}.pid
 Restart=on-failure
 Type=forking

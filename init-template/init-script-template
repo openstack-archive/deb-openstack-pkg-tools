@@ -13,7 +13,9 @@ if [ -z "${DAEMON}" ] ; then
 	DAEMON=/usr/bin/${NAME}
 fi
 PIDFILE=/var/run/${PROJECT_NAME}/${NAME}.pid
-SCRIPTNAME=/etc/init.d/${NAME}
+if [ -z "${SCRIPTNAME}" ] ; then
+	SCRIPTNAME=/etc/init.d/${NAME}
+fi
 if [ -z "${SYSTEM_USER}" ] ; then
 	SYSTEM_USER=${PROJECT_NAME}
 fi
