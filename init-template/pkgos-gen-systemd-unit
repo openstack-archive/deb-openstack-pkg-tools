@@ -31,8 +31,8 @@ Description=${DESC}
 $AFTER
 
 [Service]
-User=${PROJECT_NAME}
-Group=${PROJECT_NAME}
+User=${SYSTEM_USER}
+Group=${SYSTEM_GROUP}
 ExecStart=${SCRIPTNAME} systemd-start
 ExecStop=${SCRIPTNAME} systemd-stop
 PIDFile=/var/run/${PROJECT_NAME}/${NAME}.pid
