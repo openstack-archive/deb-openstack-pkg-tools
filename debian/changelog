@@ -2,6 +2,7 @@ openstack-pkg-tools (13) experimental; urgency=medium
 
   * Added init script templating.
   * Uploading to experimental during the freeze.
+  * Standards-Version is now 3.9.6.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 03 Oct 2014 01:07:53 +0800
 
