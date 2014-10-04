@@ -25,8 +25,11 @@ fi
 if [ "${SYSTEM_USER}" != "root" ] ; then
 	STARTDAEMON_CHUID="--chuid ${SYSTEM_USER}:${SYSTEM_GROUP}"
 fi
+if [ -z "${CONFIG_FILE}" ] ; then
+	CONFIG_FILE=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf
+fi
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
-DAEMON_ARGS="${DAEMON_ARGS} --config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
+DAEMON_ARGS="${DAEMON_ARGS} --config-file=${CONFIG_FILE}"
 
 # Exit if the package is not installed
 [ -x $DAEMON ] || exit 0
