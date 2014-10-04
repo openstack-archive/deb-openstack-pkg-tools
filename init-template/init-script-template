@@ -14,8 +14,15 @@ if [ -z "${DAEMON}" ] ; then
 fi
 PIDFILE=/var/run/${PROJECT_NAME}/${NAME}.pid
 SCRIPTNAME=/etc/init.d/${NAME}
-SYSTEM_USER=${PROJECT_NAME}
-SYSTEM_GROUP=${PROJECT_NAME}
+if [ -z "${SYSTEM_USER}" ] ; then
+	SYSTEM_USER=${PROJECT_NAME}
+fi
+if [ -z "${SYSTEM_USER}" ] ; then
+	SYSTEM_GROUP=${PROJECT_NAME}
+fi
+if [ "${SYSTEM_USER}" != "root" ] ; then
+	STARTDAEMON_CHUID="--chuid ${SYSTEM_USER}:${SYSTEM_GROUP}"
+fi
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
 DAEMON_ARGS="${DAEMON_ARGS} --config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
 
@@ -38,9 +45,9 @@ done
 [ "x$USE_LOGFILE" != "xno" ] && DAEMON_ARGS="$DAEMON_ARGS --log-file=$LOGFILE"
 
 do_start() {
-	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \
+	start-stop-daemon --start --quiet --background ${STARTDAEMON_CHUID} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \
 			--test > /dev/null || return 1
-	start-stop-daemon --start --quiet --background --chuid ${SYSTEM_USER}:${SYSTEM_GROUP} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \
+	start-stop-daemon --start --quiet --background ${STARTDAEMON_CHUID} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \
 			-- $DAEMON_ARGS || return 2
 }
 
