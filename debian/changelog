@@ -1,3 +1,9 @@
+openstack-pkg-tools (15) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 07 Oct 2014 13:42:53 +0800
+
 openstack-pkg-tools (14) experimental; urgency=medium
 
   * Adds the possibility to run daemons as root.
