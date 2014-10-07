@@ -17,14 +17,26 @@ UPSTART_FILE=`echo ${INIT_TEMPLATE} | sed 's/.init.in/.upstart/'`
 #fi
 
 if [ -z "${DAEMON}" ] ; then
-	DAEMON=/usr/bin/${NAME}
+        DAEMON=/usr/bin/${NAME}
 fi
 PIDFILE=/var/run/${PROJECT_NAME}/${NAME}.pid
-SCRIPTNAME=/etc/init.d/${NAME}
-SYSTEM_USER=${PROJECT_NAME}
-SYSTEM_GROUP=${PROJECT_NAME}
+if [ -z "${SCRIPTNAME}" ] ; then
+	SCRIPTNAME=/etc/init.d/${NAME}
+fi
+if [ -z "${SYSTEM_USER}" ] ; then
+	SYSTEM_USER=${PROJECT_NAME}
+fi
+if [ -z "${SYSTEM_USER}" ] ; then
+	SYSTEM_GROUP=${PROJECT_NAME}
+fi
+if [ "${SYSTEM_USER}" != "root" ] ; then
+	STARTDAEMON_CHUID="--chuid ${SYSTEM_USER}:${SYSTEM_GROUP}"
+fi
+if [ -z "${CONFIG_FILE}" ] ; then
+	CONFIG_FILE=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf
+fi
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
-DAEMON_ARGS="${DAEMON_ARGS} --config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf"
+DAEMON_ARGS="${DAEMON_ARGS} --config-file=${CONFIG_FILE}"
 
 echo "description \"${DESC}\"
 author \"Thomas Goirand <zigo@debian.org>\"
@@ -42,16 +54,15 @@ pre-start script
 end script
 
 script
-	DAEMON_ARGS="${DAEMON_ARGS}"
+	[ -x \"${DAEMON}\" ] || exit 0
+	DAEMON_ARGS=\"${DAEMON_ARGS}\"
 	[ -r /etc/default/openstack ] && . /etc/default/openstack
 	[ -r /etc/default/\$UPSTART_JOB ] && . /etc/default/\$UPSTART_JOB
 	[ \"x\$USE_SYSLOG\" = \"xyes\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --use-syslog\"
 	[ \"x\$USE_LOGFILE\" != \"xno\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --log-file=${LOGFILE}\"
 
 	exec start-stop-daemon --start --chdir /var/lib/${PROJECT_NAME} \\
-		--chuid ${SYSTEM_USER}:${SYSTEM_GROUP} \\
-		--make-pidfile --pidfile ${PIDFILE} \\
-		--exec ${DAEMON} -- \\
-		--config-file=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf \${DAEMON_ARGS}
+		${STARTDAEMON_CHUID} --make-pidfile --pidfile ${PIDFILE} \\
+		--exec ${DAEMON} -- --config-file=${CONFIG_FILE} \${DAEMON_ARGS}
 end script
 " >${UPSTART_FILE}
