@@ -1,3 +1,9 @@
+openstack-pkg-tools (17) experimental; urgency=medium
+
+  * Make it possible to have no --config-file= argument for the daemon.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 29 Oct 2014 00:31:49 +0800
+
 openstack-pkg-tools (16) unstable; urgency=medium
 
   * Fix some upstart job generation handling for murano-agent.

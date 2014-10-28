@@ -29,7 +29,9 @@ if [ -z "${CONFIG_FILE}" ] ; then
 	CONFIG_FILE=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf
 fi
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
-DAEMON_ARGS="${DAEMON_ARGS} --config-file=${CONFIG_FILE}"
+if [ -z "${NO_OPENSTACK_CONFIG_FILE_DAEMON_ARG}" ] ; then
+	DAEMON_ARGS="${DAEMON_ARGS} --config-file=${CONFIG_FILE}"
+fi
 
 # Exit if the package is not installed
 [ -x $DAEMON ] || exit 0
