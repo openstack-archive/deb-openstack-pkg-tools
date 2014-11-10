@@ -1,6 +1,8 @@
-openstack-pkg-tools (17) experimental; urgency=medium
+openstack-pkg-tools (17) unstable; urgency=medium
 
   * Make it possible to have no --config-file= argument for the daemon.
+  * Adds a RuntimeDirectory=/var/run/${PROJECT_NAME} in the systemd template,
+    so that /var/run/${PROJECT_NAME} can be created on boot (Closes: #767711).
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 29 Oct 2014 00:31:49 +0800
 
