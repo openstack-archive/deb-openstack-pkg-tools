@@ -1,3 +1,9 @@
+openstack-pkg-tools (19) unstable; urgency=medium
+
+  * Using RuntimeDirectory=${PROJECT_NAME} as per advice in #debian-systemd.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 10 Nov 2014 17:28:47 +0000
+
 openstack-pkg-tools (18) unstable; urgency=medium
 
   * Using /run and not /var/run.
