@@ -1,3 +1,9 @@
+openstack-pkg-tools (18) unstable; urgency=medium
+
+  * Using /run and not /var/run.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 11 Nov 2014 01:23:13 +0800
+
 openstack-pkg-tools (17) unstable; urgency=medium
 
   * Make it possible to have no --config-file= argument for the daemon.
