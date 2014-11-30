@@ -36,11 +36,13 @@ fi
 # Exit if the package is not installed
 [ -x $DAEMON ] || exit 0
 
-# Create /var/lock/X, /var/run/X, /var/lib/X and /var/log/X
-for i in lock run log lib ; do
-	mkdir -p /var/$i/${PROJECT_NAME}
-	chown ${SYSTEM_USER} /var/$i/${PROJECT_NAME}
-done
+# If ran as root, create /var/lock/X, /var/run/X, /var/lib/X and /var/log/X as needed
+if [ "x$USER" = "xroot" ] ; then
+	for i in lock run log lib ; do
+		mkdir -p /var/$i/${PROJECT_NAME}
+		chown ${SYSTEM_USER} /var/$i/${PROJECT_NAME}
+	done
+fi
 
 # This defines init_is_upstart which we use later on (+ more...)
 . /lib/lsb/init-functions
@@ -63,6 +65,10 @@ do_stop() {
 	RETVAL=$?
 	rm -f $PIDFILE
 	return "$RETVAL"
+}
+
+do_systemd_start() {
+	exec $DAEMON $DAEMON_ARGS
 }
 
 case "$1" in
@@ -88,11 +94,8 @@ status)
 	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
 ;;
 systemd-start)
-	do_start
+	do_systemd_start
 ;;  
-systemd-stop)
-	do_stop
-;;
 restart|force-reload)
 	init_is_upstart > /dev/null 2>&1 && exit 1
 	log_daemon_msg "Restarting $DESC" "$NAME"
@@ -110,7 +113,7 @@ restart|force-reload)
 	esac
 ;;
 *)
-	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload|systemd-start|systemd-stop}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload|systemd-start}" >&2
 	exit 3
 ;;
 esac
