@@ -1,3 +1,9 @@
+openstack-pkg-tools (20) experimental; urgency=medium
+
+  * Fix issues with non-existing pid folder in systemd (Closes: #770706).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 04 Dec 2014 21:49:42 +0800
+
 openstack-pkg-tools (19) unstable; urgency=medium
 
   * Using RuntimeDirectory=${PROJECT_NAME} as per advice in #debian-systemd.
