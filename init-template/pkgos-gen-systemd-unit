@@ -12,7 +12,7 @@ fi
 if [ -z "${SYSTEM_USER}" ] ; then
 	SYSTEM_USER=${PROJECT_NAME}
 fi
-if [ -z "${SYSTEM_USER}" ] ; then
+if [ -z "${SYSTEM_GROUP}" ] ; then
 	SYSTEM_GROUP=${PROJECT_NAME}
 fi
 
@@ -33,12 +33,12 @@ $AFTER
 [Service]
 User=${SYSTEM_USER}
 Group=${SYSTEM_GROUP}
+WorkingDirectory=/var/lib/${PROJECT_NAME}
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
+ExecStartPre=/bin/chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
 ExecStart=${SCRIPTNAME} systemd-start
-ExecStop=${SCRIPTNAME} systemd-stop
-RuntimeDirectory=${PROJECT_NAME}
-PIDFile=/var/run/${PROJECT_NAME}/${NAME}.pid
 Restart=on-failure
-Type=forking
 
 [Install]
 WantedBy=multi-user.target
