@@ -41,9 +41,9 @@ override_dh_installinit:
 	done
 
 override_dh_systemd_enable:
-	for i in `ls debian/*.service` ; do \
-		MYSERVICE=`echo $$i | sed s/debian\///` ; \
-		dh_systemd_enable $$MYSERVICE ; \
+	set -e; set -x; for service in debian/*.service ; do \
+		MYSERVICE=`echo $$service | sed 's/debian\///'` ; \
+		dh_systemd_enable $$MYSERVICE; \
 	done
 
 gen-author-list:
