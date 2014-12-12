@@ -40,6 +40,12 @@ override_dh_installinit:
 		pkgos-gen-systemd-unit $$i ; \
 	done
 
+override_dh_systemd_enable:
+	for i in `ls debian/*.service` ; do \
+		MYSERVICE=`echo $$i | sed s/debian\///` ; \
+		dh_systemd_enable $$MYSERVICE ; \
+	done
+
 gen-author-list:
 	git log --format='%aN <%aE>' | awk '{arr[$$0]++} END{for (i in arr){print arr[i], i;}}' | sort -rn | cut -d' ' -f2-
 

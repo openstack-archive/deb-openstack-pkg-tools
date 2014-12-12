@@ -1,7 +1,9 @@
 openstack-pkg-tools (20) unstable; urgency=medium
 
   * Now using a forking daemon anymore when using systemd. Thanks to Mikaël
-    Cluseau <mcluseau@isi.nc> for working on this cool feature.
+    Cluseau <mcluseau@isi.nc> for working on this cool feature. This also fixes
+    the issue that /var/run/$PROJECT_NAME was not created at boot time, and
+    then the daemon were not started.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 12 Dec 2014 15:24:43 +0000
 
