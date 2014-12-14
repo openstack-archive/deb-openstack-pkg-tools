@@ -36,14 +36,14 @@ override_dh_installinit:
 	done
 	dh_installinit --error-handler=true
 	# Generate the systemd unit file
+	# Note: because dh_systemd_enable is called by the
+	# dh sequencer *before* dh_installinit, we have
+	# to process it manually.
 	for i in `ls debian/*.init.in` ; do \
 		pkgos-gen-systemd-unit $$i ; \
-	done
-
-override_dh_systemd_enable:
-	set -e; set -x; for service in debian/*.service ; do \
-		MYSERVICE=`echo $$service | sed 's/debian\///'` ; \
-		dh_systemd_enable $$MYSERVICE; \
+		MYSERVICE=`echo $$i | sed 's/debian\///'` ; \
+		MYSERVICE=`echo $$MYSERVICE | sed 's/.init.in/.service/'` ; \
+		dh_systemd_enable $$MYSERVICE ; \
 	done
 
 gen-author-list:
