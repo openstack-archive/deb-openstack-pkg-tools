@@ -4,6 +4,7 @@ openstack-pkg-tools (20) unstable; urgency=medium
     Cluseau <mcluseau@isi.nc> for working on this cool feature. This also fixes
     the issue that /var/run/$PROJECT_NAME was not created at boot time, and
     then the daemon were not started.
+  * Calling dh_systemd_enable correctly when a .service file is generated.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 12 Dec 2014 15:24:43 +0000
 
