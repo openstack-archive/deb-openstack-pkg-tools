@@ -1,3 +1,9 @@
+openstack-pkg-tools (21) UNRELEASED; urgency=medium
+
+  * Fixed mix-up with SYSTEM_USER and SYSTEM_GROUP in pkgos-gen-upstart-job.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Dec 2014 15:53:43 +0800
+
 openstack-pkg-tools (20) unstable; urgency=medium
 
   * Now using a forking daemon anymore when using systemd. Thanks to Mikaël
