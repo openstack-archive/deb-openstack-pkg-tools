@@ -1,6 +1,7 @@
-openstack-pkg-tools (21) UNRELEASED; urgency=medium
+openstack-pkg-tools (21) unstable; urgency=medium
 
   * Fixed mix-up with SYSTEM_USER and SYSTEM_GROUP in pkgos-gen-upstart-job.
+  * Fixed creation of /var/run/${PROJECT_NAME} if using sysv-rc.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 15 Dec 2014 15:53:43 +0800
 
