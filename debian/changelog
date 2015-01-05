@@ -1,8 +1,19 @@
-openstack-pkg-tools (20) experimental; urgency=medium
+openstack-pkg-tools (21) unstable; urgency=medium
 
-  * Fix issues with non-existing pid folder in systemd (Closes: #770706).
+  * Fixed mix-up with SYSTEM_USER and SYSTEM_GROUP in pkgos-gen-upstart-job.
+  * Fixed creation of /var/run/${PROJECT_NAME} if using sysv-rc.
 
- -- Thomas Goirand <zigo@debian.org>  Thu, 04 Dec 2014 21:49:42 +0800
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Dec 2014 15:53:43 +0800
+
+openstack-pkg-tools (20) unstable; urgency=medium
+
+  * Now using a forking daemon anymore when using systemd. Thanks to Mikaël
+    Cluseau <mcluseau@isi.nc> for working on this cool feature. This also fixes
+    the issue that /var/run/$PROJECT_NAME was not created at boot time, and
+    then the daemon were not started.
+  * Calling dh_systemd_enable correctly when a .service file is generated.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 12 Dec 2014 15:24:43 +0000
 
 openstack-pkg-tools (19) unstable; urgency=medium
 

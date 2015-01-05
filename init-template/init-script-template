@@ -37,7 +37,7 @@ fi
 [ -x $DAEMON ] || exit 0
 
 # If ran as root, create /var/lock/X, /var/run/X, /var/lib/X and /var/log/X as needed
-if [ "x$USER" = "xroot" ] ; then
+if [ `whoami` = "root" ] ; then
 	for i in lock run log lib ; do
 		mkdir -p /var/$i/${PROJECT_NAME}
 		chown ${SYSTEM_USER} /var/$i/${PROJECT_NAME}
