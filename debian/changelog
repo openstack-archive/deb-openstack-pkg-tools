@@ -1,3 +1,10 @@
+openstack-pkg-tools (22) unstable; urgency=medium
+
+  * Calls dh_installinit after dh_systemd_enable so that systemd services are
+    started at install time.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 08 Jan 2015 15:12:13 +0000
+
 openstack-pkg-tools (21) unstable; urgency=medium
 
   * Fixed mix-up with SYSTEM_USER and SYSTEM_GROUP in pkgos-gen-upstart-job.

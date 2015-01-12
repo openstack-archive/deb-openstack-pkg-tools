@@ -34,7 +34,6 @@ override_dh_installinit:
 			pkgos-gen-upstart-job $$i ; \
 		fi \
 	done
-	dh_installinit --error-handler=true
 	# Generate the systemd unit file
 	# Note: because dh_systemd_enable is called by the
 	# dh sequencer *before* dh_installinit, we have
@@ -45,6 +44,7 @@ override_dh_installinit:
 		MYSERVICE=`echo $$MYSERVICE | sed 's/.init.in/.service/'` ; \
 		dh_systemd_enable $$MYSERVICE ; \
 	done
+	dh_installinit --error-handler=true
 
 gen-author-list:
 	git log --format='%aN <%aE>' | awk '{arr[$$0]++} END{for (i in arr){print arr[i], i;}}' | sort -rn | cut -d' ' -f2-
