@@ -96,11 +96,21 @@ pkgos_inifile () {
 		INIFILE_SHELL_INCLUDE=no
 	fi
 	INIFILE_ACCESS_MODE=${1} ; INIFILE_MYCONFIG=${2} ; INIFILE_SEARCH_SECTION=${3} ; SEARCH_DIRECTIVE=${4}
+	if [ "${PKGOS_VERBOSE}" = "yes" ] ; then
+		if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then
+			echo "pkgos_inifile: Setting value in ${INIFILE_MYCONFIG}:[${INIFILE_SEARCH_SECTION}]/${SEARCH_DIRECTIVE}"
+		else
+			echo "pkgos_inifile: Getting value in ${INIFILE_MYCONFIG}:[${INIFILE_SEARCH_SECTION}]/${SEARCH_DIRECTIVE}"
+		fi
+	fi
 	if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then INIFILE_NEW_VALUE=${5} ; else INIFILE_NEW_VALUE="pkgos_inifile_function_called_with_wrong_access_mode" ; fi
 
 	INIFILE_CNT=0
 	RET=NOT_FOUND
-	if [ ! -r ${INIFILE_MYCONFIG} ] ; then return ; fi
+	if [ ! -r "${INIFILE_MYCONFIG}" ] ; then
+		if [ "${PKGOS_VERBOSE}" = "yes" ] ; then echo "Config file ${INIFILE_MYCONFIG} not readable: exiting" ; fi
+		return
+	fi
 
 	# Iterate through all lines of the file
 	while read INIFILE_LINE ; do
