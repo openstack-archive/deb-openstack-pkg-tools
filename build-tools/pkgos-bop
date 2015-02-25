@@ -1,0 +1,80 @@
+#!/bin/sh
+# Build an OpenStack team's package and write it in /home/ftp
+
+set -e
+
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+fi
+
+# Some quick calculation
+BPO_DISTRO_NUM=~bpo${TARGET_DISTRO_NUM}+1
+if [ `uname -m` = "x86_64" ] ; then
+	BOP_BUILD_ARCH=amd64
+else
+	echo "Arch not supported: exiting."
+	exit 1
+fi
+
+cleanup_old_build () {
+	echo "===> Cleaning-up old builds"
+	rm -rf ../*.orig.tar.xz ../build-area
+}  
+
+# Finds the current version of the package
+get_deb_version() {
+	PKG_NAME=`dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2`
+	DEB_VERS=`dpkg-parsechangelog | grep -E "^Version: " | cut -d" " -f2`
+	NO_EPOC=`echo ${DEB_VERS} | cut -d":" -f2`
+	UPSTREAM_VERS=`echo ${NO_EPOC} | cut -d"-" -f1`
+	if [ "${DEB_VERS}" = "${UPSTREAM_VERS}" ] ; then IS_NATIVE="yes" ; else IS_NATIVE="no" ; fi
+	ORIG=${PKG_NAME}_${UPSTREAM_VERS}.orig.tar.xz
+	CHANGE=${PKG_NAME}_${NO_EPOC}_${ARCH}.changes
+	PKG_NAME_FIRST_CHAR=`echo ${PKG_NAME} | awk '{print substr($0,1,1)}'`
+}
+
+create_orig_tar () {
+	if grep pristine-tar debian/gbp.conf | grep -q -i true ; then
+		echo "Pristine tar not supported yet: exiting."
+		exit 1
+	else
+		./debian/rules gen-orig-xz
+	fi
+}
+
+bop_it () {
+	echo "===> Building using git-buildpackage"
+	LAST_GIT_COMMIT=`git log | head -n 1 | awk '{print $2}'`
+	dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Rebuilt by bop."
+	git commit debian/changelog -m "Rebuilt by bop."
+	if ! git-buildpackage ; then
+		git reset --hard ${LAST_GIT_COMMIT}
+		echo "There was an error when bop called git-buildpackage: exiting."
+		exit 1
+	else
+		git reset --hard ${LAST_GIT_COMMIT}
+	fi
+}
+
+test_the_package () {
+	lintian -I -E --pedantic --profile debian/openstack ../build-area/*.changes
+}
+
+copy_to_ftparchive () {
+	echo "===> Copying to the FTP repo"
+	rm ../build-area/${PKG_NAME}_${NO_EPOC}${BPO_DISTRO_NUM}_amd64.build
+	TARGET_FOLDER=${REPO_ROOT}/debian/pool/${TARGET_DISTRO}-${TARGET_OPENSTACK_REL}-backports/main/${PKG_NAME_FIRST_CHAR}/${PKG_NAME}
+	rm -rf ${TARGET_FOLDER}
+	mkdir -p ${TARGET_FOLDER}
+	cp ../build-area/* ${TARGET_FOLDER}
+}
+
+cleanup_old_build
+get_deb_version
+create_orig_tar
+bop_it
+test_the_package
+copy_to_ftparchive
+# Scan the repo to add the new package
+pkgos-scan-repo

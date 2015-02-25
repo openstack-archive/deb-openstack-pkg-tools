@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -e
+
+CWD=`pwd`
+PKG_NAME=`basename ${CWD}`
+
+usage () {
+	echo "$0 creates a new Git repository out of your current working tree on alioth."
+	echo "You must be at the root of that local git repository"
+	echo "$0 will use the current folder as the name for the Alioth git repository."
+	echo ""
+	echo "Usage: $0 <destination-project-path-on-alioth>"
+	echo "example: $0 openstack will create a /git/openstack/${PKG_NAME}.git repository"
+	echo "note that you will need to have write access on the destination project,"
+	echo "which means you must be a member of that said project on Alioth."
+	echo ""
+	echo "Please send patch/comments to: Thomas Goirand <zigo@debian.org>"
+	exit 1
+}
+
+if [ $# != 1 ] ; then
+	usage
+fi
+
+DEST_PROJECT=$1
+
+# Create the tarball and upload it to Alioth
+cd ..
+echo "===> Cloning ${PKG_NAME} as bare: ${PKG_NAME}.git"
+git clone --bare ${PKG_NAME} ${PKG_NAME}.git
+echo "===> Building tarball: ${PKG_NAME}.git.tar.gz"
+tar -czf ${PKG_NAME}.git.tar.gz ${PKG_NAME}.git
+echo "===> Uploading ${PKG_NAME}.git.tar.gz to git.debian.org"
+scp ${PKG_NAME}.git.tar.gz git.debian.org:
+
+# Uncompress it on Alioth, fix perms and hook
+ssh git.debian.org "cd /git/${DEST_PROJECT} && echo '===> Uncompressing ${PKG_NAME}.git.tar.gz in /git/${DEST_PROJECT}' && tar -xzf ~/${PKG_NAME}.git.tar.gz && echo '===> Activating update-server-info hook' &&  mv ${PKG_NAME}.git/hooks/post-update.sample ${PKG_NAME}.git/hooks/post-update && cd /git/${DEST_PROJECT}/${PKG_NAME}.git && git --bare update-server-info && echo '===> Deleting tarball on alioth' && rm ~/${PKG_NAME}.git.tar.gz && echo '===> Fxing g+w unix permissions' && find /git/${DEST_PROJECT}/${PKG_NAME}.git -exec chmod g+w {} \\; && find . -type d -exec chmod g+s {} \\; && git config core.sharedRepository group "
+echo "===> Cleaning local bare copy and tarball"
+rm ${PKG_NAME}.git.tar.gz
+rm -rf ${PKG_NAME}.git
