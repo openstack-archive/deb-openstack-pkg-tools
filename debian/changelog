@@ -1,6 +1,7 @@
 openstack-pkg-tools (23) UNRELEASED; urgency=medium
 
   * Reviewed long description.
+  * Added build scripts and lots of utilities.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 25 Feb 2015 21:56:24 +0100
 

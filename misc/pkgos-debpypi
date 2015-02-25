@@ -1,0 +1,269 @@
+#!/bin/sh
+
+set -e
+set -x
+
+if [ "${1}" = "-u" ] && [ -n "${2}" ] ; then
+	ORIG_URL="${2}"
+	shift
+	shift
+fi
+
+if [ -z "${1}" ] ; then
+	echo "This tool creates a template Debian package out of a PyPi package name."
+	echo "Once this script has run, make sure it did what you expected, then use"
+	echo "the newly created source package as a template. Make sure you correct"
+	echo "the debian/copyright file before publishing any package."
+	echo "Usage: ${0} package-name"
+	exit 1
+fi
+
+PKG_NAME=${1}
+# Calculate the package name based on the command line argument
+LOWER_PKG_NAME=`echo ${PKG_NAME} | awk '{print tolower($0)}'`
+LOWER_PKG_NAME=`echo ${LOWER_PKG_NAME} | sed 's/_/-/'`
+if echo ${LOWER_PKG_NAME} | grep -q '^python-' ; then
+	DEB_PKG_NAME=${LOWER_PKG_NAME}
+else
+	DEB_PKG_NAME=python-${LOWER_PKG_NAME}
+fi
+echo "===> Package name will be ${DEB_PKG_NAME}"
+
+if [ ! -e ${PKG_NAME}.xml ] ; then
+	echo "===> Downloading DOAP XML record"
+	wget -nv "https://pypi.python.org/pypi?:action=doap&name=${PKG_NAME}" -O ${PKG_NAME}.xml
+fi
+
+# Get info from the XML document using xpath.
+VERSION_STRING=`xpath -e "//release/Version/revision/text()" ${PKG_NAME}.xml 2> /dev/null`
+SHORT_DESC=`xpath -e "//shortdesc/text()" ${PKG_NAME}.xml 2> /dev/null`
+LONG_DESC=`xpath -e "//description/text()" ${PKG_NAME}.xml 2> /dev/null`
+UP_MAINT_NAME=`xpath -e "//maintainer/foaf:Person/foaf:name/text()" ${PKG_NAME}.xml 2> /dev/null`
+HOMEPAGE=`xpath -e "//homepage/@rdf:resource" ${PKG_NAME}.xml 2> /dev/null | cut -d= -f2 | sed 's#"##g'`
+FIRST_LETTER=`echo ${PKG_NAME} | awk '{print substr($0,0,1)}'`
+if [ -e ${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.xz ] ; then
+	ORIG=${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.xz
+else
+	ORIG=${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.gz
+fi
+
+echo "===> Package info:
+Upstream version: ${VERSION_STRING}
+Author: ${UP_MAINT_NAME}
+Homepage: ${HOMEPAGE}"
+
+if [ ! -e ${ORIG} ] ; then
+	echo "===> Downloading ${ORIG} file"
+	if [ -z "${ORIG_URL}" ] ; then
+		ORIG_URL=https://pypi.python.org/packages/source/${FIRST_LETTER}/${PKG_NAME}/${PKG_NAME}-${VERSION_STRING}.tar.gz
+	fi
+	wget -nv "${ORIG_URL}" -O ${ORIG}
+fi
+
+echo "===> Extracting ${ORIG}"
+tar -xf ${ORIG}
+if ! [ ${PKG_NAME}-${VERSION_STRING} = ${DEB_PKG_NAME}-${VERSION_STRING} ] ; then
+	mv ${PKG_NAME}-${VERSION_STRING} ${DEB_PKG_NAME}-${VERSION_STRING}
+fi
+
+# Trying to guess the maintainer's email
+if [ -r ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py ] ; then
+	if grep -q author_email ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py ; then
+		AUTHOR_EMAIL=`grep author_email ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py | cut -d= -f2 | awk '{print $1}' | sed -e 's/,//' -e "s/'//g" -e 's/"//' | grep -e '^[._a-zA-Z0-9-]*@[-a-z0-9.]*$'`
+	fi
+fi
+
+echo "===> Creating debian folder for ${DEB_PKG_NAME}"
+if [ ! -d ${DEB_PKG_NAME}-${VERSION_STRING}/debian/source ] ; then
+	mkdir -p ${DEB_PKG_NAME}-${VERSION_STRING}/debian/source
+fi
+cd ${DEB_PKG_NAME}-${VERSION_STRING}
+
+echo "===> Searching for sphinx doc folder"
+if [ -e doc ] ; then
+	DOC_FOLDER=doc
+elif [ -e docs ] ; then
+	DOC_FOLDER=docs
+fi
+if [ -n "${DOC_FOLDER}" ] ; then
+	CONFPY_FILE=`find ${DOC_FOLDER} -name 'conf.py'`
+	if [ -r "${CONFPY_FILE}" ] ; then
+		DOC_FOLDER=`dirname ${CONFPY_FILE}`
+		SPHINX_BUILD_DEP=", python-sphinx"
+		RULES_WITH=",sphinxdoc"
+		SUGGEST_DOC="
+Suggests: ${DEB_PKG_NAME}-doc"
+	else
+		DOC_FOLDER=
+		SPHINX_BUILD_DEP=""
+		RULES_WITH=""
+		SUGGEST_DOC=""
+	fi
+fi
+
+echo "Source: ${DEB_PKG_NAME}
+Section: python
+Priority: optional
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Thomas Goirand <zigo@debian.org>
+Build-Depends: debhelper (>= 9), dh-python, python-setuptools, python-all (>= 2.6.6-3~), python3-setuptools, python3-all${SPHINX_BUILD_DEP}
+Standards-Version: 3.9.6
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/${DEB_PKG_NAME}.git
+Vcs-Git: git://anonscm.debian.org/openstack/${DEB_PKG_NAME}.git
+Homepage: ${HOMEPAGE}
+
+Package: ${DEB_PKG_NAME}
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: \${python:Depends}, \${misc:Depends}${SUGGEST_DOC}
+Suggests: python-${LOWER_PKG_NAME}-doc
+Description: ${SHORT_DESC} - Python 2.x
+ ${LONG_DESC}
+ .
+ This package contains the Python 2.x module.
+
+Package: python3-${LOWER_PKG_NAME}
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: \${python3:Depends}, \${misc:Depends}${SUGGEST_DOC}
+Suggests: python-${LOWER_PKG_NAME}-doc
+Description: ${SHORT_DESC} - Python 3.x
+ - REPLACE ME -
+ .
+ This package contains the Python 3.x module.
+" >debian/control
+
+if [ -n "${DOC_FOLDER}" ] ; then
+	echo "Package: python-${LOWER_PKG_NAME}-doc
+Section: doc
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: \${misc:Depends}, \${sphinxdoc:Depends}
+Description: ${SHORT_DESC} - doc
+ - REPLACE ME -
+ .
+ This package contains the documentation.
+" >>debian/control
+
+	echo "Document: ${DEB_PKG_NAME}-doc
+Title: ${PKG_NAME} Documentation
+Author: N/A
+Abstract: Sphinx documentation for ${PKG_NAME}
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python-${LOWER_PKG_NAME}-doc/html/index.html
+Files: /usr/share/doc/python-${LOWER_PKG_NAME}-doc/html/*" >debian/python-${LOWER_PKG_NAME}-doc.doc-base
+fi
+
+EDITOR=touch dch --create --package ${DEB_PKG_NAME} --distribution unstable --urgency medium -v ${VERSION_STRING}-1
+rm +1
+
+echo "9" >debian/compat
+
+if [ -n "${AUTHOR_EMAIL}" ] ; then
+	UP_MAINT_AND_EMAIL="${UP_MAINT_NAME} <${AUTHOR_EMAIL}>"
+else
+	UP_MAINT_AND_EMAIL=${UP_MAINT_NAME}
+fi
+echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ${PKG_NAME}
+Source: ${HOMEPAGE}
+
+Files: debian/*
+Copyright: (c) 2014, Thomas Goirand <zigo@debian.org>
+License: Apache-2
+
+Files: *
+Copyright: (c) 2013, ${UP_MAINT_AND_EMAIL}
+License: Apache-2
+
+License: Apache-2
+ Licensed under the Apache License, Version 2.0 (the \"License\");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+    http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an \"AS IS\" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license
+ can be found in /usr/share/common-licenses/Apache-2.0.
+" >debian/copyright
+
+echo "[DEFAULT]
+upstream-branch = master
+debian-branch = debian/unstable
+upstream-tag = %(version)s
+compression = xz
+
+[git-buildpackage]
+export-dir = ../build-area/
+" >debian/gbp.conf
+
+if [ -n "${DOC_FOLDER}" ] ; then
+	SPHINX_BUILD_RULES="override_dh_sphinxdoc:
+	sphinx-build -b html doc debian/python-${LOWER_PKG_NAME}-doc/usr/share/doc/python-${LOWER_PKG_NAME}-doc/html
+	dh_sphinxdoc -O--buildsystem=python_distutils
+
+"
+else
+	SPHINX_BUILD_RULES=""
+fi
+echo "#!/usr/bin/make -f
+
+PYTHONS:=\$(shell pyversions -vr)
+PYTHON3S:=\$(shell py3versions -vr)
+
+UPSTREAM_GIT = git://github.com/<please-user>/${PKG_NAME}.git
+-include /usr/share/openstack-pkg-tools/pkgos.make
+
+%:
+	dh \$@ --buildsystem=python_distutils --with python2,python3${RULES_WITH}
+
+override_dh_install:
+	set -e ; for pyvers in \$(PYTHONS); do \\
+		python\$\$pyvers setup.py install --install-layout=deb \\
+			--root \$(CURDIR)/debian/python-${LOWER_PKG_NAME}; \\
+	done
+	set -e ; for pyvers in \$(PYTHON3S); do \\
+		python\$\$pyvers setup.py install --install-layout=deb \\
+			--root \$(CURDIR)/debian/python3-${LOWER_PKG_NAME}; \\
+	done
+	rm -rf \$(CURDIR)/debian/python*-${LOWER_PKG_NAME}/usr/lib/python*/dist-packages/*.pth
+
+override_dh_auto_test:
+ifeq (,\$(findstring nocheck, \$(DEB_BUILD_OPTIONS)))
+	set -e ; for pyvers in \$(PYTHONS) \$(PYTHON3S); do \\
+		python\$\$pyvers setup.py test ; \\
+	done
+endif
+
+${SPHINX_BUILD_RULES}
+override_dh_clean:
+	dh_clean -O--buildsystem=python_distutils
+	rm -rf build
+
+
+# Commands not to run
+override_dh_installcatalogs:
+override_dh_installemacsen override_dh_installifupdown:
+override_dh_installinfo override_dh_installmenu override_dh_installmime:
+override_dh_installmodules override_dh_installlogcheck:
+override_dh_installpam override_dh_installppp override_dh_installudev override_dh_installwm:
+override_dh_installxfonts override_dh_gconf override_dh_icons override_dh_perl override_dh_usrlocal:
+override_dh_installcron override_dh_installdebconf:
+override_dh_installlogrotate override_dh_installgsettings:
+" >debian/rules
+chmod +x debian/rules
+
+echo "version=3
+http://pypi.python.org/packages/source/${FIRST_LETTER}/${PKG_NAME} ${PKG_NAME}-(.*).tar.gz
+" >debian/watch
+
+echo "3.0 (quilt)" >debian/source/format
+echo 'extend-diff-ignore = "^[^/]*[.]egg-info/"' >debian/source/options

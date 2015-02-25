@@ -1,0 +1,85 @@
+#!/bin/sh
+
+set -e
+
+if [ "${1}" = "-h" ] ; then
+	echo "This utility attemps to parse an OpenStack requirements.txt file"
+	echo "as input, and produce a list of Debian dependencies as output."
+	echo "Note that this is far from perfect, and that you *WILL* need to"
+	echo "manually check for the dependencies. This is only a helper in"
+	echo "order to gain some precious development time."
+	echo ""
+	echo "If this utility is called without a parameter, it will attempt"
+	echo "to read the requirements.txt and test-requirements.txt file."
+	echo "Otherwise, it takes the first argument as the file to parse."
+	exit 0
+fi
+
+# Some packages should never be in the dependencies in Debian,
+# as they are included in Python 2.7. If you find one that is
+# missing, just add it to the list it here.
+BLACK_LIST="discover argparse"
+is_blacklisted () {
+	ISBLACKLISTED="no"
+	for i in $BLACK_LIST ; do
+		if [ "${i}" = "${1}" ] ; then
+			ISBLACKLISTED="yes"
+		fi
+	done
+}
+
+NO_PYTHON_PREFIX="alembic testrepository subunit"
+is_python_prefixed () {
+	PY_PREFIX="yes"
+	for i in ${NO_PYTHON_PREFIX} ; do
+		if [ "${i}" = "${1}" ] ; then
+			PY_PREFIX="no"
+		fi
+	done
+}
+
+# Param: input file
+parse_and_print () {
+	for i in `cat $1 | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}'` ; do
+#		echo "Line ---> $i"
+		VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
+		if [ -n "$VERS" ] ; then
+			PKG=`echo $i | sed -e "s/$VERS//" | sed -e s/python-//`
+		else
+			PKG=`echo $i | sed -e s/python-//`
+		fi
+		PKG=`echo $PKG | sed -e s/_/-/`
+		is_blacklisted $PKG
+		if [ $ISBLACKLISTED = "no" ] ; then
+			is_python_prefixed ${PKG}
+			if [ ${PY_PREFIX} = "yes" ] ; then
+				PKG=python-$PKG
+			fi
+			PKG=`echo $PKG | tr '[:upper:]' '[:lower:]'`
+			if [ -n "$VERS" ] ; then
+				FIRST_CONSTR=`echo $VERS | cut -d, -f1`
+				FIRST_NUMS=`echo $FIRST_CONSTR | sed -e 's/[<>=\!]*//'`
+				FIRST_SIGN=`echo $FIRST_CONSTR | sed -e "s/${FIRST_NUMS}//"`
+				if [ "${FIRST_SIGN}" = '<' ] ; then
+					FIRST_SIGN='<<'
+				fi
+				if [ "${FIRST_SIGN}" = '>' ] ; then
+					FIRST_SIGN='>>'
+				fi
+				echo " $PKG (${FIRST_SIGN} ${FIRST_NUMS}),"
+			else
+				echo " $PKG,"
+			fi
+		#	echo "Package: PKG\t\tFirst sign: ${FIRST_SIGN}\t\tFirst num: ${FIRST_NUMS}..."
+		fi
+	done
+}
+
+if [ "${1}" ] ; then
+	parse_and_print ${1}
+else
+	echo "Depends:"
+	parse_and_print requirements.txt
+	echo "Build-Depends-Indep:"
+	parse_and_print test-requirements.txt
+fi
