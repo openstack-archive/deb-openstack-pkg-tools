@@ -39,7 +39,9 @@ create_orig_tar () {
 		echo "Pristine tar not supported yet: exiting."
 		exit 1
 	else
-		./debian/rules gen-orig-xz
+		if [ "${IS_NATIVE}" = "no" ] ; then
+			./debian/rules gen-orig-xz
+		fi
 	fi
 }
 
