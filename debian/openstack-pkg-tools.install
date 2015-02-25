@@ -7,3 +7,4 @@ init-template/pkgos-gen-upstart-job	/usr/bin
 misc/openstack.profile			/usr/share/lintian/profiles/debian
 misc/pkgos*				/usr/bin
 build-tools/*				/usr/bin
+etc/pkgos/pkgos.conf			/etc/pkgos
