@@ -6,6 +6,8 @@ set -e
 if ! [ -r /etc/pkgos/pkgos.conf ] ; then
 	echo "Could not read /etc/pkgos/pkgos.conf"
 	exit 1
+else
+	. /etc/pkgos/pkgos.conf
 fi
 
 # Some quick calculation
