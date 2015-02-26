@@ -3,16 +3,12 @@
 set -e
 set -x
 
-### STUFF TO CONFIGURE IS ONLY HERE ###  
-TARGET_DISTRO=jessie
-TARGET_DISTRO_NUM=80
-TARGET_OPENSTACK_REL=kilo
-REPO_ROOT=/home/ftp
-BPO_POSTFIX=bpo80+1
-REPO_DEST=${TARGET_OPENSTACK_REL}-backports
-
-SCP_DEST_HOST=archive.gplhost.com
-SCP_DEST_SUITE=${REPO_DEST}
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
 
 # Manage parameters of this script
 usage () {
@@ -96,12 +92,12 @@ sbuild
 # Copy in the FTP repo
 cd ..
 rm ${SOURCE_NAME}_${DEB_VERSION}~${BPO_POSTFIX}_amd64.build
-TARGET_FTP_FOLDER=${REPO_ROOT}/debian/pool/${REPO_DEST}/main/${PKG_NAME_FIRST_CHAR}/$SOURCE_NAME
+TARGET_FTP_FOLDER=${REPO_ROOT}/debian/pool/${REPO_NOCHANGE_BACKPORT_DEST}/main/${PKG_NAME_FIRST_CHAR}/$SOURCE_NAME
 mkdir -p ${TARGET_FTP_FOLDER}
 cp *bpo* *.orig.tar.* ${TARGET_FTP_FOLDER}
 
 # Update the archive and the sbuild chroot
-scan-repo ${REPO_DEST}
+scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
 sudo sbuild-update -udcar ${TARGET_DISTRO}-amd64
 
 # Uploading to FTP
