@@ -38,8 +38,7 @@ get_deb_version() {
 
 create_orig_tar () {
 	if grep pristine-tar debian/gbp.conf | grep -q -i true ; then
-		echo "Pristine tar not supported yet: exiting."
-		exit 1
+		echo "Nothing special to do with Pristine tar: not generating orig file!"
 	else
 		if [ "${IS_NATIVE}" = "no" ] ; then
 			./debian/rules gen-orig-xz
