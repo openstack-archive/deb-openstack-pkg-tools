@@ -3,12 +3,12 @@
 set -e
 #set -x
 
-
-# Configure here, and no-more
-TARGET_DISTRO=jessie
-REPO_DEST=${TARGET_DISTRO}-kilo-backports
-SCAN_ARCHES=amd64
-REPO_ROOT=/home/ftp
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
 
 # It's possible to give the repo name as parameter
 if [ -n "${1}" ] ; then
@@ -42,5 +42,7 @@ scan_repo() {
 }
 
 scan_repo
-echo "===> Updating schroot ${TARGET_DISTRO}-${SCAN_ARCHES}"
-sudo sbuild-update -udcar ${TARGET_DISTRO}-${SCAN_ARCHES}
+for i in ${SCAN_ARCHES} ; do
+	echo "===> Updating schroot ${TARGET_DISTRO}-${i}"
+	sudo sbuild-update -udcar ${TARGET_DISTRO}-${i}
+done

@@ -1,0 +1,129 @@
+#!/bin/sh
+
+set -e
+set -x
+
+. /etc/pkgos/pkgos.conf
+
+PKG_NAME=${1}
+
+ARCH=i386 ; if [ `uname -m` = "x86_64" ] ; then ARCH=amd64 ; fi
+if ! [ `whoami` = "root" ] ; then SU=sudo ; fi
+
+#################################
+# Define some utility functions #
+#################################
+# Is the package from the pkgs-js group?
+is_pkg_js () {
+	ISPKGJS="no"
+	for i in $PKG_JS ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISPKGJS="yes"
+		fi
+	done
+}
+
+# Is the package maintained on a debian/<openstack-release-name> branch?
+is_core () {
+	ISCORE="no"
+	for i in $OSTACK_PKGS ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISCORE="yes"
+			return
+		fi
+	done
+}
+
+# Is the package maintained on a debian/experimental branch?
+is_experi () {
+	ISEXPERI="no"
+	for i in ${EXPERIMENTAL_BRANCH} ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISEXPERI="yes"
+			return
+		fi
+	done
+}
+
+# Get some version information out of the debian/changelog last entry
+get_deb_version() {
+	PKG_NAME=`dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2`
+	DEB_VERS=`dpkg-parsechangelog | grep -E "^Version: " | cut -d" " -f2`
+	NO_EPOC=`echo ${DEB_VERS} | cut -d":" -f2`
+	UPSTREAM_VERS=`echo ${NO_EPOC} | cut -d"-" -f1`
+	if [ "${DEB_VERS}" = "${UPSTREAM_VERS}" ] ; then IS_NATIVE="yes" ; else IS_NATIVE="no" ; fi
+	ORIG=${PKG_NAME}_${UPSTREAM_VERS}.orig.tar.xz
+	CHANGE=${PKG_NAME}_${NO_EPOC}_${ARCH}.changes
+	PKG_NAME_FIRST_CHAR=`echo ${PKG_NAME} | awk '{print substr($0,1,1)}'`
+}
+
+##############################
+# Start of the actual script #
+##############################
+MY_CWD=`pwd`
+
+# Go in the build dir and make sure it's cleaned
+BUILD_ROOT=/var/lib/jenkins/jobs/${PKG_NAME}/builds/${BUILD_NUMBER}
+rm -rf ${BUILD_ROOT}/$PKG_NAME
+mkdir -p ${BUILD_ROOT}/$PKG_NAME
+cd ${BUILD_ROOT}/$PKG_NAME
+
+# "git clone" the package from the correct repo (either pkg-javascript or openstack)
+is_pkg_js
+if [ "${ISPKGJS}" = "yes" ] ; then
+	git clone ${CLONE_URL_PKGJS}/${PKG_NAME}.git
+else
+	git clone ${CLONE_URL_BASE}/${PKG_NAME}.git
+fi
+cd $PKG_NAME
+
+# Checkout the correct branch(es) before building
+PRIS=$(grep pristine-tar debian/gbp.conf | awk '{print $1}')
+if [ "${PRIS}" = "pristine-tar" ] ; then
+	PRIS_VAL=$(grep pristine-tar debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
+	if [ "${PRIS_VAL}" = "False" ] ; then
+		PRIS="none"
+	fi
+fi
+if [ "${PRIS}" = "pristine-tar" ] ; then
+	# If it's a pristine-tar package, checkout the pristine-tar and upstream-unstable branches
+	git checkout -b pristine-tar origin/pristine-tar
+	git checkout -b upstream-unstable origin/upstream-unstable
+	is_experi
+	if [ "${ISEXPERI}" = "yes" ] ; then
+		git checkout -b debian-experimental origin/debian-experimental
+	else
+		git checkout debian-unstable
+	fi
+	get_deb_version
+else
+	is_core
+	if [ "${ISCORE}" = "yes" ] ; then
+		# If it's a core package, listed in OSTACK_PKGS in /etc/pkgos/pkgos.conf
+		# then we use debian/juno, debian/kilo, etc. as packaging branch.
+		git checkout -b ${TARGET_OPENSTACK_REL} origin/${TARGET_OPENSTACK_REL} || true
+	else
+		# If it's listed as EXPERIMENTAL_BRANCH in /etc/pkgos/pkgos.conf, then we
+		# use debian/experimental branch.
+		is_experi
+		if [ "${ISEXPERI}" = "yes" ] ; then
+			CURBRANCH=`git branch | grep '*' | cut -d' ' -f2`
+			if [ "${CURBRANCH}" = "debian/experimental" ] ; then
+				echo "Already on debian/experimental"
+			else
+				git checkout -b debian/experimental origin/debian/experimental
+			fi
+		else
+			git checkout -b ${DEBIAN_BRANCH} origin/${DEBIAN_BRANCH} || true
+		fi
+	fi
+	get_deb_version
+	# Generate the .orig.tar.xz using git archive...
+	if [ "${IS_NATIVE}" = "no" ] ; then
+		./debian/rules gen-orig-xz
+	fi
+fi
+
+# Build the package using sbuild (see that script, which can be used
+# in your own laptop if you don't want to use jenkins...)
+pkgos-bop

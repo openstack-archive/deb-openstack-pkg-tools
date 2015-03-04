@@ -1,0 +1,251 @@
+#!/bin/sh
+
+set -e
+set -x
+
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
+
+detect_env () {
+	DEB_RELEASE=`lsb_release -a | grep Codename: | awk '{print $2}'`
+	DEB_RELEASE_NUM=`lsb_release -a | grep Release: | awk '{print $2}'`
+	APT="apt-get install -y"
+	echo 'APT::Install-Recommends "0";' >/etc/apt/apt.conf.d/80norecommends
+}
+
+configure_hostname () {
+	DEFROUTE_IF=`LC_ALL=C /sbin/route | grep default |awk -- '{ print $8 }' | cut -d" " -f1`
+	if [ -n "${DEFROUTE_IF}" ] ; then
+		DEFROUTE_IP=`LC_ALL=C ip addr show "${DEFROUTE_IF}" | grep inet | head -n 1 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
+		if [ -n "${DEFROUTE_IP}" ] ; then
+			echo "Detected IP: ${DEFROUTE_IP}"
+			echo "127.0.0.1       localhost.localdomain localhost
+185.8.56.73	${HOST_FQDN} ${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+" >/etc/hosts
+		fi
+	fi
+	echo $HOST_FQDN >/etc/hostname
+	/etc/init.d/hostname.sh start
+}
+
+install_all_software () {
+	${APT} linux-image-amd64 jenkins sbuild apache2 screen joe apache2 pure-ftpd ftp most \
+		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
+		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
+		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools jenkins-cli lintian
+}
+
+configure_apache () {
+	a2enmod proxy
+	a2enmod proxy_http
+	a2enmod ssl
+	a2enmod headers
+	if [ "${DEB_RELEASE}" = "precise" ] ; then
+		APACHE_SSL_VHOST_CONF=default-ssl
+		FORWARD_TO_ADDR=ip6-localhost
+		DEFAULT_SITE=default
+		DEFAULT_SSL_SITE=default-ssl
+	elif [ "${DEB_RELEASE}" = "wheezy" ] ; then
+		APACHE_SSL_VHOST_CONF=default-ssl
+		FORWARD_TO_ADDR=localhost
+		DEFAULT_SITE=default
+		DEFAULT_SSL_SITE=default-ssl
+	else
+		APACHE_SSL_VHOST_CONF=default-ssl.conf
+		FORWARD_TO_ADDR=localhost
+		DEFAULT_SITE=000-default.conf
+		DEFAULT_SSL_SITE=default-ssl.conf
+	fi
+	a2ensite ${DEFAULT_SSL_SITE}
+	APACHE_SSL_VHOST_CONF_FULL_PATH=/etc/apache2/sites-available/${APACHE_SSL_VHOST_CONF}
+	echo "<IfModule mod_ssl.c>
+<VirtualHost *:443>
+	ServerAdmin webmaster@localhost
+	ErrorLog \${APACHE_LOG_DIR}/error.log
+	CustomLog \${APACHE_LOG_DIR}/access.log combined
+
+	SSLEngine on
+	SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+
+	<FilesMatch \"\.(cgi|shtml|phtml|php)\$\">
+                                SSLOptions +StdEnvVars
+                </FilesMatch>
+                <Directory /usr/lib/cgi-bin>
+                                SSLOptions +StdEnvVars
+	</Directory>
+
+	# Jenkins proxy (and reverse)
+	ProxyPass / http://${FORWARD_TO_ADDR}:8080/ nocanon
+	ProxyPassReverse / http://${FORWARD_TO_ADDR}:8080/ 
+	ProxyRequests Off
+	AllowEncodedSlashes NoDecode
+	Header edit Location ^http://${HOST_FQDN}/ https://${HOST_FQDN}/
+	RequestHeader set X-Forwarded-Proto \"https\"
+	RequestHeader set X-Forwarded-Port \"443\"
+	ProxyPreserveHost on
+	SetOutputFilter INFLATE;proxy-html;DEFLATE
+	SetEnv proxy-nokeepalive 1
+
+	ServerAdmin webmaster@localhost
+</VirtualHost>
+</IfModule>
+" >${APACHE_SSL_VHOST_CONF_FULL_PATH}
+	a2ensite ${APACHE_SSL_VHOST_CONF}
+	service apache2 restart
+	if ! [ -e /var/www/html/debian ] ; then
+		ln -s /home/ftp/debian /var/www/html/debian
+	fi
+}
+
+configure_pure () {
+	if getent passwd ftp >/dev/null ; then
+		echo "FTP user already existing"
+	else
+		/usr/sbin/useradd -m ftp
+	fi
+	chown jenkins:jenkins /home/ftp
+	rm -f /etc/pure-ftpd/conf/NoAnonymous
+	service pure-ftpd stop
+	sleep 2
+	service pure-ftpd start
+}
+
+configure_jenkins_dotgitconfig () {
+	echo "[user]
+	email = zigo@debian.org
+	name = Thomas Goirand  
+[gitreview]
+	username = thomas-goirand
+[alias]
+	wdiff = diff --color-words
+	wshow = show --color-words
+[color]
+	ui = true" >/var/lib/jenkins/.gitconfig
+}
+
+configure_jenkins_sudoers () {
+	echo "jenkins ALL = NOPASSWD: ALL" >/etc/sudoers.d/jenkins
+	chmod 440 /etc/sudoers.d/jenkins
+}
+
+configure_jenkins_gpg_key () {
+	# Generate a self-signed gpg key so that we can sign packages
+	if ! [ -e /var/lib/jenkins/.gnupg/secring.gpg ] ; then
+		echo "
+%echo Generating a basic OpenPGP key
+Key-Type: RSA
+Key-Length: 4096
+Name-Real: Mirantis Jenkins
+Name-Email: jenkins@${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}.pkgs.mirantis.com
+Expire-Date: 0
+" >/var/lib/jenkins/gen-key-batchfile
+		mkdir -p /var/lib/jenkins/.gnupg
+		chmod 700 /var/lib/jenkins/.gnupg
+		echo "keyserver hkp://pool.sks-keyservers.net
+personal-digest-preferences SHA256
+default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
+cert-digest-algo SHA256
+" >/var/lib/jenkins/.gnupg/gpg.conf
+		chown -R jenkins:jenkins /var/lib/jenkins/.gnupg
+		su jenkins -c 'gpg --gen-key --batch /var/lib/jenkins/gen-key-batchfile'
+	fi
+}
+
+configure_sbuild () {
+	mkdir -p /root/.gnupg
+	chmod 600 /root/.gnupg
+	gpg --list-keys
+#	sbuild-update --keygen
+#	sbuild-adduser jenkins
+	if ! [ -e /var/lib/sbuild/jessie-amd64.tar.gz ] ; then
+		sbuild-createchroot --make-sbuild-tarball=/var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ${TARGET_DISTRO} `mktemp -d` ${CLOSEST_DEBIAN_MIRROR}
+	fi
+	sed -i 's/^[ #\t]*builder[ #\t]*=.*/builder = sbuild --no-apt-update/' /etc/git-buildpackage/gbp.conf
+	sed -i 's/^[ #\t]*cleaner[ #\t]*=.*/cleaner = /bin/true' /etc/git-buildpackage/gbp.conf
+}
+
+configure_jenkins_sbuildrc () {
+	GPG_KEY_ID=$(su jenkins -c "gpg --list-keys | grep ^pub | awk '{print \$2}' | cut -d/ -f2")
+	echo "# don't remove this, Perl needs it:
+
+\$build_arch_all = 1;
+\$build_source = 1;
+\$distribution = '"${TARGET_DISTRO}"';
+\$run_lintian = 0;
+
+# Don't sign packages:
+#\$pgp_options = '-us -uc';
+
+# FIX THIS !!!
+\$key_id = '${GPG_KEY_ID}';
+
+1;
+" >/var/lib/jenkins/.sbuildrc
+}
+
+configure_jenkins_job_builder () {
+	#GENERATED_PASSWORD=$(dd if=/dev/random bs=64 count=1 2>|/dev/null | md5sum | awk '{print $1}')
+	if [ -z "${JENKINS_JOBS_BUILDER_PASS}" ] ; then
+		echo "Please define the JENKINS_JOBS_BUILDER_PASS in /etc/pkgos/pkgos.conf"
+		echo "or this script cannot use the jenkins-jobs tool."
+		echo "I will exit now..."
+		exit 1
+	fi
+	echo "[job_builder]
+ignore_cache=True
+keep_descriptions=False
+include_path=/usr/local/bin
+recursive=False
+allow_duplicates=False
+
+[jenkins]
+user=zigo
+password=${JENKINS_JOBS_BUILDER_PASS}
+url=https://${HOST_FQDN}/
+" >/etc/jenkins_jobs/jenkins_jobs.ini
+	echo "" >job.yaml
+	for i in `cat /etc/pkgos/pkg-list` ; do
+		echo "- job:
+    name: $i
+    builders:
+        - shell: 'pkgos-bop-jenkins "${i}"'
+    auth-token: g5rjtpms5emw
+    logrotate:
+        numToKeep: 4
+    publishers:
+        - ircbot:
+            strategy: all
+            notify-start: true
+            message-type: summary
+    wrappers:
+        - ansicolor:
+            colormap: xterm
+" >>job.yaml
+	done
+	jenkins-jobs update job.yaml
+}
+
+detect_env
+install_all_software
+configure_hostname
+configure_apache
+configure_pure
+configure_jenkins_dotgitconfig
+configure_jenkins_sudoers
+configure_jenkins_gpg_key
+configure_jenkins_sbuildrc
+configure_sbuild
+configure_jenkins_job_builder
