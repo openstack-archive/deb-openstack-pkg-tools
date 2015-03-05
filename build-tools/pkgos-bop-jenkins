@@ -101,7 +101,7 @@ else
 	if [ "${ISCORE}" = "yes" ] ; then
 		# If it's a core package, listed in OSTACK_PKGS in /etc/pkgos/pkgos.conf
 		# then we use debian/juno, debian/kilo, etc. as packaging branch.
-		git checkout -b ${TARGET_OPENSTACK_REL} origin/${TARGET_OPENSTACK_REL} || true
+		git checkout -b debian/${TARGET_OPENSTACK_REL} origin/debian/${TARGET_OPENSTACK_REL} || true
 	else
 		# If it's listed as EXPERIMENTAL_BRANCH in /etc/pkgos/pkgos.conf, then we
 		# use debian/experimental branch.

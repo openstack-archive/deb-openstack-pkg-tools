@@ -44,7 +44,8 @@ install_all_software () {
 	${APT} linux-image-amd64 jenkins sbuild apache2 screen joe apache2 pure-ftpd ftp most \
 		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
 		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
-		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools jenkins-cli lintian
+		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools jenkins-cli \
+		lintian lsb-release
 }
 
 configure_apache () {
@@ -164,17 +165,139 @@ cert-digest-algo SHA256
 	fi
 }
 
+build_ostack_archive_keyring_package () {
+	# Export the jenkins GPG key as pubkey.gpg in debian/dists/pubkey.gpg
+	mkdir -p ${REPO_ROOT}/debian/dists
+	chown -R jenkins:jenkins ${REPO_ROOT}/debian/dists
+	chown jenkins:jenkins ${REPO_ROOT}/debian
+	su jenkins -c "gpg --export -a jenkins" >${REPO_ROOT}/debian/dists/pubkey.gpg
+	# Create a Debian package out of it, called openstack-debian-archive-keyring
+	# and put it in the newly created Debian repository.
+	# Yes, a working, Debian-policy-compliant package is really only a few lines of shell... :)
+	TMPDIR=`mktemp -d`
+	MYCWD=`pwd`
+	cd ${TMPDIR}
+	chown jenkins:jenkins .
+	VER=0.1
+	NAME=${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}-archive-keyring
+	rm -rf ${NAME}-${VER}
+	mkdir -p ${NAME}-${VER}/debian/source
+	cd ${NAME}-${VER}
+	export DEBFULLNAME="Mirantis Jenkins"
+	export DEBEMAIL="jenkins@${HOST_FQDN}"
+	dch --create --package ${NAME} -D unstable --noquery --newversion 0.1 -m "Automatic archive package build."
+	sed -i 's/MAINTAINER <EMAIL>/Mirantis Jenkins <jenkins@'${HOST_FQDN}'>/' debian/changelog
+	echo "3.0 (native)" >debian/source/format
+	echo 9 >debian/compat
+	echo "#!/usr/bin/make -f
+%:
+	dh \$@
+" >debian/rules
+	echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ${NAME}
+Source: See the openstack-pkg-tools package
+
+Files: *
+Copyright: (c) 2015, Thomas Goirand <zigo@debian.org>
+License: Apache-2
+ Licensed under the Apache License, Version 2.0 (the \"License\");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+    http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an \"AS IS\" BASIS,  
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license
+ can be found in /usr/share/common-licenses/Apache-2.0.
+" >debian/copyright
+	echo "Source: ${NAME}
+Section: net
+Priority: extra
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Thomas Goirand <zigo@debian.org>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.6
+
+Package: ${NAME}
+Architecture: all
+Depends: \${misc:Depends}
+Description: OpenStack ${TARGET_OPENSTACK_REL} ${TARGET_DISTRO} archive keyring
+ OpenStack ${TARGET_OPENSTACK_REL} ${TARGET_DISTRO} archive keyring
+">debian/control
+	cp ${REPO_ROOT}/debian/dists/pubkey.gpg .
+	echo "pubkey.gpg /usr/share/${NAME}" >debian/${NAME}.install
+	echo "#!/bin/sh
+set -e
+
+if [ \"\$1\" = \"configure\" ] || [ \"\$1\" = \"reconfigure\" ] ; then
+	apt-key add /usr/share/${NAME}/pubkey.gpg
+fi
+
+#DEBHELPER#
+
+exit 0
+" >debian/${NAME}.postinst
+	chown -R jenkins:jenkins .
+	su jenkins -c dpkg-buildpackage || true
+	FIRST_LETTER=`echo ${TARGET_OPENSTACK_REL} | awk '{print substr($0,0,2)}'`
+	cd ..
+	MYDEST=${REPO_ROOT}/debian/pool/${REPO_DEST}/main/${FIRST_LETTER}/${NAME}
+	su jenkins -c "mkdir -p ${MYDEST}"
+	cp *.changes *.tar.xz *.deb *.dsc ${MYDEST}
+	chown -R jenkins:jenkins ${MYDEST}
+	rm -r ${TMPDIR}
+	# Since we have a first package, let's scan the repo with it! :)
+	su jenkins -c pkgos-scan-repo
+}
+
 configure_sbuild () {
+	# Setup the gpg key for sbuild
 	mkdir -p /root/.gnupg
 	chmod 600 /root/.gnupg
 	gpg --list-keys
-#	sbuild-update --keygen
-#	sbuild-adduser jenkins
-	if ! [ -e /var/lib/sbuild/jessie-amd64.tar.gz ] ; then
+	sbuild-update --keygen
+
+	# Add jenkins as a sbuild user
+	sbuild-adduser jenkins
+
+	# Create the actual schroot env
+	if ! [ -e /var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ] ; then
 		sbuild-createchroot --make-sbuild-tarball=/var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ${TARGET_DISTRO} `mktemp -d` ${CLOSEST_DEBIAN_MIRROR}
 	fi
-	sed -i 's/^[ #\t]*builder[ #\t]*=.*/builder = sbuild --no-apt-update/' /etc/git-buildpackage/gbp.conf
-	sed -i 's/^[ #\t]*cleaner[ #\t]*=.*/cleaner = /bin/true' /etc/git-buildpackage/gbp.conf
+
+	# Make sure git-buildpackage is using sbuild
+	sed -i 's/^[ #\t]*builder[ #\t]*=.*/builder = sbuild -v --no-apt-update/' /etc/git-buildpackage/gbp.conf
+	sed -i 's/^[ #\t]*cleaner[ #\t]*=.*/cleaner = \/bin\/true/' /etc/git-buildpackage/gbp.conf
+
+	# Install the juno-jessie-archive-keyring package in the repository
+	FIRST_LETTER=`echo ${TARGET_OPENSTACK_REL} | awk '{print substr($0,0,2)}'`
+	NAME=${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}-archive-keyring
+	VERS=0.1
+	MYPKG_FILE_NAME=${NAME}_0.1_all.deb
+	LOCATION=debian/pool/${TARGET_DISTRO}-${TARGET_OPENSTACK_REL}-backports/main/${FIRST_LETTER}/${NAME}/${MYPKG_FILE_NAME}
+	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- apt-get install -y wget
+	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- wget http://localhost/${LOCATION}
+	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- dpkg -i ${MYPKG_FILE_NAME}
+
+	# Add a hook to have our repository used inside the sbuild chroot
+	echo "#!/bin/sh
+
+set -e
+
+. \"\$SETUP_DATA_DIR/common-data\"
+. \"\$SETUP_DATA_DIR/common-functions\"
+. \"\$SETUP_DATA_DIR/common-config\"   
+
+if [ \$STAGE = \"setup-start\" ] || [ \$STAGE = \"setup-recover\" ]; then
+	echo \"deb http://localhost/debian ${TARGET_DISTRO}-${TARGET_OPENSTACK_REL}-backports main\" >\${CHROOT_PATH}/etc/apt/sources.list.d/openstack.list
+	echo \"deb http://localhost/debian ${REPO_NOCHANGE_BACKPORT_DEST} main\" >\${CHROOT_PATH}/etc/apt/sources.list.d/openstack-backports.list
+fi" >>/etc/schroot/setup.d/80sources
+	chmod +x /etc/schroot/setup.d/80sources
 }
 
 configure_jenkins_sbuildrc () {
@@ -197,13 +320,7 @@ configure_jenkins_sbuildrc () {
 }
 
 configure_jenkins_job_builder () {
-	#GENERATED_PASSWORD=$(dd if=/dev/random bs=64 count=1 2>|/dev/null | md5sum | awk '{print $1}')
-	if [ -z "${JENKINS_JOBS_BUILDER_PASS}" ] ; then
-		echo "Please define the JENKINS_JOBS_BUILDER_PASS in /etc/pkgos/pkgos.conf"
-		echo "or this script cannot use the jenkins-jobs tool."
-		echo "I will exit now..."
-		exit 1
-	fi
+	GENERATED_PASSWORD=$(dd if=/dev/random bs=64 count=1 2>|/dev/null | md5sum | awk '{print $1}')
 	echo "[job_builder]
 ignore_cache=True
 keep_descriptions=False
@@ -248,4 +365,5 @@ configure_jenkins_sudoers
 configure_jenkins_gpg_key
 configure_jenkins_sbuildrc
 configure_sbuild
+build_ostack_archive_keyring_package
 configure_jenkins_job_builder
