@@ -365,12 +365,17 @@ url=https://${HOST_FQDN}/
 	jenkins-jobs update job.yaml
 }
 
+restart_jenkins () {
+	service jenkins restart
+}
+
 detect_env
 install_all_software
 configure_hostname
 configure_apache
 configure_pure
-install_jenkins_plugins
+# This often fails because the list of plugins isn't fetched by Jenkins
+#install_jenkins_plugins
 configure_jenkins_dotgitconfig
 configure_jenkins_sudoers
 configure_jenkins_gpg_key
@@ -378,3 +383,5 @@ configure_jenkins_sbuildrc
 build_ostack_archive_keyring_package
 configure_sbuild
 configure_jenkins_job_builder
+# This is needed so that jenkins can login into sbuild
+restart_jenkins
