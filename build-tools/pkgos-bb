@@ -98,7 +98,6 @@ cp *bpo* *.orig.tar.* ${TARGET_FTP_FOLDER}
 
 # Update the archive and the sbuild chroot
 pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
-sudo sbuild-update -udcar ${TARGET_DISTRO}-amd64
 
 # Uploading to FTP
 if [ "${UPLOAD}" = "yes" ] ; then
