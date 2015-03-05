@@ -334,7 +334,7 @@ password=${JENKINS_JOBS_BUILDER_PASS}
 url=https://${HOST_FQDN}/
 " >/etc/jenkins_jobs/jenkins_jobs.ini
 	echo "" >job.yaml
-	for i in `cat /etc/pkgos/pkg-list` ; do
+	for i in `cat /etc/pkgos/build-list` ; do
 		echo "- job:
     name: $i
     builders:
