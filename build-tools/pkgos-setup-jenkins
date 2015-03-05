@@ -293,8 +293,12 @@ configure_sbuild () {
 
 	# Since we have already a first package (the archive-keyring one),
 	# let's scan the tree in /home/ftp/debian/pool, and build a valid Debian repo
+
+	MYCWD=`pwd`
+	cd /var/lib/jenkins
 	su jenkins -c pkgos-scan-repo
 	su jenkins -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
+	cd ${MYCWD}
 
 	# Add a hook to have both our repositories used inside the sbuild chroot
 	echo "#!/bin/sh
