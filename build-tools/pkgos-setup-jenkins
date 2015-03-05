@@ -257,7 +257,7 @@ exit 0
 		su jenkins -c "mkdir -p ${i}"
 		cp *.changes *.tar.xz *.deb *.dsc ${i}
 		chown -R jenkins:jenkins ${i}
-	fi
+	done
 	# Since we have a first package, let's scan the repo with it! :)
 	su jenkins -c pkgos-scan-repo
 	su jenkins -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
