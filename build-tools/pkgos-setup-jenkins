@@ -45,7 +45,7 @@ install_all_software () {
 		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
 		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
 		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools jenkins-cli \
-		lintian lsb-release jenkins-job-builder
+		lintian lsb-release jenkins-job-builder postfix
 }
 
 configure_apache () {
@@ -122,6 +122,11 @@ configure_pure () {
 	service pure-ftpd stop
 	sleep 2
 	service pure-ftpd start
+}
+
+install_jenkins_plugins () {
+	jenkins-cli -s https://${HOST_FQDN}/ -noCertificateCheck install-plugin instant-messaging
+	jenkins-cli -s https://${HOST_FQDN}/ -noCertificateCheck install-plugin ircbot
 }
 
 configure_jenkins_dotgitconfig () {
@@ -365,6 +370,7 @@ install_all_software
 configure_hostname
 configure_apache
 configure_pure
+install_jenkins_plugins
 configure_jenkins_dotgitconfig
 configure_jenkins_sudoers
 configure_jenkins_gpg_key
