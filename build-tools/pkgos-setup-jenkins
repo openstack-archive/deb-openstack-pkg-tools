@@ -247,11 +247,15 @@ exit 0
 	FIRST_LETTER=`echo ${TARGET_OPENSTACK_REL} | awk '{print substr($0,0,2)}'`
 	cd ..
 	MYDEST=${REPO_ROOT}/debian/pool/${REPO_DEST}/main/${FIRST_LETTER}/${NAME}
-	su jenkins -c "mkdir -p ${MYDEST}"
-	cp *.changes *.tar.xz *.deb *.dsc ${MYDEST}
-	chown -R jenkins:jenkins ${MYDEST}
+	MYDEST2=${REPO_ROOT}/debian/pool/${REPO_NOCHANGE_BACKPORT_DEST}/main/${FIRST_LETTER}/${NAME}
+	for i in ${MYDEST} ${MYDEST2} ; do
+		su jenkins -c "mkdir -p ${i}"
+		cp *.changes *.tar.xz *.deb *.dsc ${i}
+		chown -R jenkins:jenkins ${i}
+	fi
 	# Since we have a first package, let's scan the repo with it! :)
 	su jenkins -c pkgos-scan-repo
+	su jenkins -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
 	cd ${MYCWD}
 	rm -r ${TMPDIR}
 }
