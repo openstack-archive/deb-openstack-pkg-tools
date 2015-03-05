@@ -24,7 +24,7 @@ configure_hostname () {
 		if [ -n "${DEFROUTE_IP}" ] ; then
 			echo "Detected IP: ${DEFROUTE_IP}"
 			echo "127.0.0.1       localhost.localdomain localhost
-185.8.56.73	${HOST_FQDN} ${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}
+${DEFROUTE_IP}	${HOST_FQDN} ${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}
 
 # The following lines are desirable for IPv6 capable hosts
 ::1     ip6-localhost ip6-loopback
@@ -37,7 +37,7 @@ ff02::3 ip6-allhosts
 		fi
 	fi
 	echo $HOST_FQDN >/etc/hostname
-	/etc/init.d/hostname.sh start
+	hostname `cat /etc/hostname`
 }
 
 install_all_software () {
@@ -45,7 +45,7 @@ install_all_software () {
 		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
 		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
 		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools jenkins-cli \
-		lintian lsb-release
+		lintian lsb-release jenkins-job-builder
 }
 
 configure_apache () {
@@ -106,7 +106,7 @@ configure_apache () {
 " >${APACHE_SSL_VHOST_CONF_FULL_PATH}
 	a2ensite ${APACHE_SSL_VHOST_CONF}
 	service apache2 restart
-	if ! [ -e /var/www/html/debian ] ; then
+	if [ ! -e /var/www/html/debian ] && [ ! -h /var/www/html/debian ] ; then
 		ln -s /home/ftp/debian /var/www/html/debian
 	fi
 }
@@ -250,9 +250,10 @@ exit 0
 	su jenkins -c "mkdir -p ${MYDEST}"
 	cp *.changes *.tar.xz *.deb *.dsc ${MYDEST}
 	chown -R jenkins:jenkins ${MYDEST}
-	rm -r ${TMPDIR}
 	# Since we have a first package, let's scan the repo with it! :)
 	su jenkins -c pkgos-scan-repo
+	cd ${MYCWD}
+	rm -r ${TMPDIR}
 }
 
 configure_sbuild () {
@@ -364,6 +365,6 @@ configure_jenkins_dotgitconfig
 configure_jenkins_sudoers
 configure_jenkins_gpg_key
 configure_jenkins_sbuildrc
-configure_sbuild
 build_ostack_archive_keyring_package
+configure_sbuild
 configure_jenkins_job_builder
