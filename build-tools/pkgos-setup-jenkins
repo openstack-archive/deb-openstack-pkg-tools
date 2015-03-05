@@ -258,9 +258,6 @@ exit 0
 		cp *.changes *.tar.xz *.deb *.dsc ${i}
 		chown -R jenkins:jenkins ${i}
 	done
-	# Since we have a first package, let's scan the repo with it! :)
-	su jenkins -c pkgos-scan-repo
-	su jenkins -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
 	cd ${MYCWD}
 	rm -r ${TMPDIR}
 }
@@ -294,7 +291,12 @@ configure_sbuild () {
 	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- wget http://localhost/${LOCATION}
 	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- dpkg -i ${MYPKG_FILE_NAME}
 
-	# Add a hook to have our repository used inside the sbuild chroot
+	# Since we have already a first package (the archive-keyring one),
+	# let's scan the tree in /home/ftp/debian/pool, and build a valid Debian repo
+	su jenkins -c pkgos-scan-repo
+	su jenkins -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
+
+	# Add a hook to have both our repositories used inside the sbuild chroot
 	echo "#!/bin/sh
 
 set -e
