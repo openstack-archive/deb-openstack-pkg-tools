@@ -69,7 +69,7 @@ fi
 # Trying to guess the maintainer's email
 if [ -r ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py ] ; then
 	if grep -q author_email ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py ; then
-		AUTHOR_EMAIL=`grep author_email ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py | cut -d= -f2 | awk '{print $1}' | sed -e 's/,//' -e "s/'//g" -e 's/"//' | grep -e '^[._a-zA-Z0-9-]*@[-a-z0-9.]*$'`
+		AUTHOR_EMAIL=`grep author_email ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py | cut -d= -f2 | awk '{print $1}' | sed -e 's/,//' -e "s/'//g" -e 's/"//g' | grep -e '^[._a-zA-Z0-9+-]*@[-a-z0-9.]*$'`
 	fi
 fi
 
@@ -101,12 +101,27 @@ Suggests: ${DEB_PKG_NAME}-doc"
 	fi
 fi
 
+echo "===> Checking for PBR and fixing accordingly"
+# If the package uses PBR, then we need openstack-pkg-tools
+if grep -q "setup_requires=\['pbr'\]" ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py ; then
+	OSTACK_PKG_T_CTRL=", openstack-pkg-tools"
+	# We need a mandatory include...
+	# ... and the export OSLO_PACKAGE_VERSION=$(VERSION)
+	OSTACK_PKG_T_RULES="include /usr/share/openstack-pkg-tools/pkgos.make
+export OSLO_PACKAGE_VERSION=\$(VERSION)"
+else
+	# Otherwise, we just include it non-mandatorily, so that
+	# we can use ./debian/rules gen-orig-xz
+	OSTACK_PKG_T_CTRL=""
+	OSTACK_PKG_T_RULES="-include /usr/share/openstack-pkg-tools/pkgos.make"
+fi
+
 echo "Source: ${DEB_PKG_NAME}
 Section: python
 Priority: optional
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>
-Build-Depends: debhelper (>= 9), dh-python, python-setuptools, python-all (>= 2.6.6-3~), python3-setuptools, python3-all${SPHINX_BUILD_DEP}
+Build-Depends: debhelper (>= 9), dh-python, python-setuptools, python-all (>= 2.6.6-3~), python3-setuptools, python3-all${SPHINX_BUILD_DEP}${OSTACK_PKG_T_CTRL}
 Standards-Version: 3.9.6
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/${DEB_PKG_NAME}.git
 Vcs-Git: git://anonscm.debian.org/openstack/${DEB_PKG_NAME}.git
@@ -116,7 +131,6 @@ Package: ${DEB_PKG_NAME}
 Architecture: all
 Pre-Depends: dpkg (>= 1.15.6~)
 Depends: \${python:Depends}, \${misc:Depends}${SUGGEST_DOC}
-Suggests: python-${LOWER_PKG_NAME}-doc
 Description: ${SHORT_DESC} - Python 2.x
  ${LONG_DESC}
  .
@@ -126,7 +140,6 @@ Package: python3-${LOWER_PKG_NAME}
 Architecture: all
 Pre-Depends: dpkg (>= 1.15.6~)
 Depends: \${python3:Depends}, \${misc:Depends}${SUGGEST_DOC}
-Suggests: python-${LOWER_PKG_NAME}-doc
 Description: ${SHORT_DESC} - Python 3.x
  - REPLACE ME -
  .
@@ -220,7 +233,7 @@ PYTHONS:=\$(shell pyversions -vr)
 PYTHON3S:=\$(shell py3versions -vr)
 
 UPSTREAM_GIT = git://github.com/<please-user>/${PKG_NAME}.git
--include /usr/share/openstack-pkg-tools/pkgos.make
+${OSTACK_PKG_T_RULES}
 
 %:
 	dh \$@ --buildsystem=python_distutils --with python2,python3${RULES_WITH}
