@@ -18,7 +18,7 @@ fi
 # Some packages should never be in the dependencies in Debian,
 # as they are included in Python 2.7. If you find one that is
 # missing, just add it to the list it here.
-BLACK_LIST="discover argparse"
+BLACK_LIST="discover argparse ordereddict"
 is_blacklisted () {
 	ISBLACKLISTED="no"
 	for i in $BLACK_LIST ; do
@@ -40,6 +40,7 @@ is_python_prefixed () {
 
 # Param: input file
 parse_and_print () {
+	DEP_LIST=""
 	for i in `cat $1 | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}'` ; do
 #		echo "Line ---> $i"
 		VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
@@ -55,8 +56,12 @@ parse_and_print () {
 			if [ ${PY_PREFIX} = "yes" ] ; then
 				PKG=python-$PKG
 			fi
+			# Convert the package name into lowercase, as Debian
+			# doesn't have any upper case in package names
 			PKG=`echo $PKG | tr '[:upper:]' '[:lower:]'`
 			if [ -n "$VERS" ] ; then
+				# If there's a a version-depends, convert the pip style
+				# of dependency to the Debian one (ie: >> instead of >)
 				FIRST_CONSTR=`echo $VERS | cut -d, -f1`
 				FIRST_NUMS=`echo $FIRST_CONSTR | sed -e 's/[<>=\!]*//'`
 				FIRST_SIGN=`echo $FIRST_CONSTR | sed -e "s/${FIRST_NUMS}//"`
@@ -66,20 +71,59 @@ parse_and_print () {
 				if [ "${FIRST_SIGN}" = '>' ] ; then
 					FIRST_SIGN='>>'
 				fi
-				echo " $PKG (${FIRST_SIGN} ${FIRST_NUMS}),"
+				if [ -z "${DEP_LIST}" ] ; then
+					DEP_LIST="$PKG (${FIRST_SIGN} ${FIRST_NUMS})"
+					#echo " $PKG (${FIRST_SIGN} ${FIRST_NUMS}),"
+				else
+					DEP_LIST="${DEP_LIST}\n$PKG (${FIRST_SIGN} ${FIRST_NUMS})"
+				fi
 			else
-				echo " $PKG,"
+				if [ -z "${DEP_LIST}" ] ; then
+					DEP_LIST="$PKG"
+				else
+					#echo " $PKG,"
+					DEP_LIST="${DEP_LIST}\n$PKG"
+				fi
 			fi
-		#	echo "Package: PKG\t\tFirst sign: ${FIRST_SIGN}\t\tFirst num: ${FIRST_NUMS}..."
+			#echo "Package: $PKG\t\tFirst sign: ${FIRST_SIGN}\t\tFirst num: ${FIRST_NUMS}..."
 		fi
 	done
+}
+
+# Param: $DEPS: the dependency list, one package per line
+#        $1: the word for the package dep (ie: Depends: or Build-Depends-Indep:)
+format_output () {
+#	set -x
+	SPACES_IN_FRONT=`echo "${1} " | sed -e 's/[a-zBDI:-]/ /g'`
+	CNT="0"
+	echo $DEPS | sort -u | while read i ; do
+		if [ "${CNT}" = "0" ] ; then
+			echo "${1} ${i}, "
+		else
+			echo -n "${1}" | sed -e 's/[a-zBDI:-]/ /g'
+			echo " ${i},"
+		fi
+		CNT=$(($CNT + 1))
+	done
+	if [ $1 = "Depends:" ] ; then
+		echo "         \${misc:Depends},"
+		echo "         \${python:Depends}"
+	fi
 }
 
 if [ "${1}" ] ; then
 	parse_and_print ${1}
 else
-	echo "Depends:"
-	parse_and_print requirements.txt
-	echo "Build-Depends-Indep:"
+	# Gather the dependencies.
 	parse_and_print test-requirements.txt
+	DEP_LIST_TESTS=${DEP_LIST}
+	parse_and_print requirements.txt
+	DEP_LIST_RUNTIME=${DEP_LIST}
+
+	# Format the output
+	DEPS="${DEP_LIST_RUNTIME}\n${DEP_LIST_TESTS}"
+	format_output "Build-Depends-Indep:"
+
+	DEPS=${DEP_LIST_RUNTIME}
+	format_output "Depends:"
 fi

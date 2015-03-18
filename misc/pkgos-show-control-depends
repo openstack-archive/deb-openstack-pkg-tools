@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -e
+
+TOTAL_NUM_OF_LINES=`cat debian/control | wc -l`
+BUILD_DEPENDS_LINE=`cat debian/control | grep -n "^Build-Depends:" | head -n 1 | cut -d":" -f1`
+BUILD_DEPENDS_INDEP_LINE=`cat debian/control | grep -n "^Build-Depends-Indep:" | head -n 1 | cut -d":" -f1`
+STANDARD_VERSION_LINE=`cat debian/control | grep -n "^Standards-Version:" | head -n 1 | cut -d":" -f1`
+DEPENDS_LINE=`cat debian/control | grep -n "^Depends:" | head -n 1 | cut -d":" -f1`
+DESCRIPTION_LINE=`cat debian/control | grep -n "^Description:" | head -n 1 | cut -d":" -f1`
+
+# Params: $1 line start
+#         $2 line end
+show_part_of_file () {
+	LINE_END=$((${2} - 1))
+	TMP_FILE=`mktemp -t pkgos-show-control-depends.XXXXXX` || exit 1
+	head -n ${LINE_END} debian/control >${TMP_FILE}
+	LINE_START=$(($LINE_END - ${1} + 1))
+	tail -n ${LINE_START} ${TMP_FILE}
+	rm ${TMP_FILE}
+}
+
+# Show Build-Depends:
+show_part_of_file ${BUILD_DEPENDS_LINE} ${BUILD_DEPENDS_INDEP_LINE}
+
+# Show Build-Depends-Indep:
+show_part_of_file ${BUILD_DEPENDS_INDEP_LINE} ${STANDARD_VERSION_LINE}
+
+# Show Depends:
+show_part_of_file ${DEPENDS_LINE} ${DESCRIPTION_LINE}

@@ -281,6 +281,10 @@ configure_sbuild () {
 	sed -i 's/^[ #\t]*builder[ #\t]*=.*/builder = sbuild -v --no-apt-update/' /etc/git-buildpackage/gbp.conf
 	sed -i 's/^[ #\t]*cleaner[ #\t]*=.*/cleaner = \/bin\/true/' /etc/git-buildpackage/gbp.conf
 
+	# Make sure that /dev/shm is mounted in the chroot, otherwise anything which
+	# uses /dev/shm (like python-taskflow, etc.) will fail to build
+	sed -i 's|#/dev/shm|/dev/shm|' /etc/schroot/default/fstab
+
 	# Install the juno-jessie-archive-keyring package in the repository
 	FIRST_LETTER=`echo ${TARGET_OPENSTACK_REL} | awk '{print substr($0,0,2)}'`
 	NAME=${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}-archive-keyring
