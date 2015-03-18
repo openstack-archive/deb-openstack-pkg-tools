@@ -28,7 +28,29 @@ is_blacklisted () {
 	done
 }
 
-NO_PYTHON_PREFIX="alembic testrepository subunit"
+# Some packages should never make it into the Build-Depends-Indep:,
+# because they are already in Build-Depends:. Here's the list for it.
+BUILD_DEPENDS_LIST="sphinx pbr"
+is_build_depends () {
+	ISBUILDDEPENDS="no"
+	for i in ${BUILD_DEPENDS_LIST} ; do
+		if [ "${i}" = ${1} ] ; then
+			ISBUILDDEPENDS="yes"
+		fi
+	done
+}
+
+EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-novaclient python-swiftclient"
+has_1_in_epoc () {
+	HAS_1_IN_EPOC="no"
+	for i in ${EPOC_1_IN} ; do
+		if [ "${i}" = ${1} ] ; then
+			HAS_1_IN_EPOC="yes"
+		fi
+	done
+}
+
+NO_PYTHON_PREFIX="alembic testrepository subunit websockify"
 is_python_prefixed () {
 	PY_PREFIX="yes"
 	for i in ${NO_PYTHON_PREFIX} ; do
@@ -38,10 +60,16 @@ is_python_prefixed () {
 	done
 }
 
-# Param: input file
+# Param: $1: input file
+#        $2: if set, then the Build-Depends: programs will be removed (for example: sphinx, pbr, etc.)
 parse_and_print () {
+	INPUT_FILE=$1
+	REMOVE_BUILD_DEPENDS="no"
+	if [ -n "${2}" ] ; then
+		REMOVE_BUILD_DEPENDS="yes"
+	fi
 	DEP_LIST=""
-	for i in `cat $1 | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}'` ; do
+	for i in `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP` ; do
 #		echo "Line ---> $i"
 		VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
 		if [ -n "$VERS" ] ; then
@@ -51,7 +79,11 @@ parse_and_print () {
 		fi
 		PKG=`echo $PKG | sed -e s/_/-/`
 		is_blacklisted $PKG
-		if [ $ISBLACKLISTED = "no" ] ; then
+		ISBUILDDEPENDS="no"
+		if [ REMOVE_BUILD_DEPENDS="yes" ] ; then
+			is_build_depends $PKG
+		fi
+		if [ $ISBLACKLISTED = "no" ] && [ ${ISBUILDDEPENDS} = "no" ]; then
 			is_python_prefixed ${PKG}
 			if [ ${PY_PREFIX} = "yes" ] ; then
 				PKG=python-$PKG
@@ -59,7 +91,7 @@ parse_and_print () {
 			# Convert the package name into lowercase, as Debian
 			# doesn't have any upper case in package names
 			PKG=`echo $PKG | tr '[:upper:]' '[:lower:]'`
-			if [ -n "$VERS" ] ; then
+			if [ -n "$VERS" ] && [ $PKG != "python-hacking" ] ; then
 				# If there's a a version-depends, convert the pip style
 				# of dependency to the Debian one (ie: >> instead of >)
 				FIRST_CONSTR=`echo $VERS | cut -d, -f1`
@@ -70,6 +102,10 @@ parse_and_print () {
 				fi
 				if [ "${FIRST_SIGN}" = '>' ] ; then
 					FIRST_SIGN='>>'
+				fi
+				has_1_in_epoc $PKG
+				if [ "${HAS_1_IN_EPOC}" = "yes" ] ; then
+					FIRST_NUMS="1:${FIRST_NUMS}"
 				fi
 				if [ -z "${DEP_LIST}" ] ; then
 					DEP_LIST="$PKG (${FIRST_SIGN} ${FIRST_NUMS})"
@@ -98,7 +134,7 @@ format_output () {
 	CNT="0"
 	echo $DEPS | sort -u | while read i ; do
 		if [ "${CNT}" = "0" ] ; then
-			echo "${1} ${i}, "
+			echo "${1} ${i},"
 		else
 			echo -n "${1}" | sed -e 's/[a-zBDI:-]/ /g'
 			echo " ${i},"
@@ -107,15 +143,35 @@ format_output () {
 	done
 	if [ $1 = "Depends:" ] ; then
 		echo "         \${misc:Depends},"
-		echo "         \${python:Depends}"
+		echo "         \${python:Depends},"
 	fi
 }
+
+calc_substitue_list () {
+	if [ -r /etc/pkgos/substitute ] ; then
+		while read i ; do
+			SOURCE=`echo $i | cut -d" " -f1`
+			DEST=`echo $i | cut -d" " -f2`
+			EXP="$EXP -e s/$SOURCE/$DEST/"
+		done </etc/pkgos/substitute
+	fi
+	echo $EXP
+}
+
+calc_substitue_list
 
 if [ "${1}" ] ; then
 	parse_and_print ${1}
 else
+	echo "Build-Depends: debhelper (>= 9),
+               dh-python,
+               openstack-pkg-tools,
+               python-all (>= 2.6.6-3~),
+               python-pbr,
+               python-setuptools,
+               python-sphinx,"
 	# Gather the dependencies.
-	parse_and_print test-requirements.txt
+	parse_and_print test-requirements.txt build-depends
 	DEP_LIST_TESTS=${DEP_LIST}
 	parse_and_print requirements.txt
 	DEP_LIST_RUNTIME=${DEP_LIST}
