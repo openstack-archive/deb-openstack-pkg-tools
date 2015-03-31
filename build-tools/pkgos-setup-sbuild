@@ -1,4 +1,4 @@
-#!/bin/sh5~
+#!/bin/sh
 
 set -e
 set -x
@@ -410,10 +410,6 @@ usage () {
 	echo "the username 2nd param is only if you use the dev mode"
 	exit 1
 }
-
-if [ $# != 1 ] ; then
-	usage
-fi
 
 if [ "${1}" = "dev" ] ; then
 	echo "Setting-up a developer machine."
