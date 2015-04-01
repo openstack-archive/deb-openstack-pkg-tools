@@ -132,7 +132,7 @@ format_output () {
 #	set -x
 	SPACES_IN_FRONT=`echo "${1} " | sed -e 's/[a-zBDI:-]/ /g'`
 	CNT="0"
-	echo $DEPS | sort -u | while read i ; do
+	echo $DEPS | LC_COLLATE=C sort -u | while read i ; do
 		if [ "${CNT}" = "0" ] ; then
 			echo "${1} ${i},"
 		else
@@ -155,7 +155,6 @@ calc_substitue_list () {
 			EXP="$EXP -e s/$SOURCE/$DEST/"
 		done </etc/pkgos/substitute
 	fi
-	echo $EXP
 }
 
 calc_substitue_list
