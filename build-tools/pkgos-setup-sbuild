@@ -3,6 +3,10 @@
 set -e
 set -x
 
+#################################
+# AUTOMATICALLY DETECT ENV HERE #
+#################################
+
 if ! [ -r /etc/pkgos/pkgos.conf ] ; then
 	echo "Could not read /etc/pkgos/pkgos.conf"
 	exit 1
@@ -41,11 +45,14 @@ ff02::3 ip6-allhosts
 }
 
 install_all_software () {
-	${APT} linux-image-amd64 jenkins sbuild apache2 screen joe apache2 pure-ftpd ftp most \
+	${APT} linux-image-amd64 sbuild apache2 screen joe apache2 pure-ftpd ftp most \
 		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
 		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
-		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools jenkins-cli \
-		lintian lsb-release jenkins-job-builder postfix
+		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools \
+		lintian lsb-release postfix
+	if [ "${DEV_OR_JENKINS}" = "jenkins" ] ; then
+		${APT} jenkins jenkins-job-builder jenkins-cli
+	fi
 }
 
 configure_apache () {
@@ -170,28 +177,36 @@ cert-digest-algo SHA256
 	fi
 }
 
+check_user_gpg_key () {
+	if ! [ -d /home/${THE_DEV_USER}/.gnupg ] ; then
+		echo "There's no /home/${THE_DEV_USER}/.gnupg folder, please make a GPG key"
+		echo "using gpg --gen-key and restart this script"
+		exit 1
+	fi
+}
+
 build_ostack_archive_keyring_package () {
 	# Export the jenkins GPG key as pubkey.gpg in debian/dists/pubkey.gpg
 	mkdir -p ${REPO_ROOT}/debian/dists
-	chown -R jenkins:jenkins ${REPO_ROOT}/debian/dists
-	chown jenkins:jenkins ${REPO_ROOT}/debian
-	su jenkins -c "gpg --export -a jenkins" >${REPO_ROOT}/debian/dists/pubkey.gpg
+	chown -R ${THE_DEV_USER}:${THE_DEV_USER} ${REPO_ROOT}/debian/dists
+	chown ${THE_DEV_USER}:${THE_DEV_USER} ${REPO_ROOT}/debian
+	su ${THE_DEV_USER} -c "gpg --export -a ${THE_DEV_USER}" >${REPO_ROOT}/debian/dists/pubkey.gpg
 	# Create a Debian package out of it, called openstack-debian-archive-keyring
 	# and put it in the newly created Debian repository.
 	# Yes, a working, Debian-policy-compliant package is really only a few lines of shell... :)
 	TMPDIR=`mktemp -d`
 	MYCWD=`pwd`
 	cd ${TMPDIR}
-	chown jenkins:jenkins .
+	chown ${THE_DEV_USER}:${THE_DEV_USER} .
 	VER=0.1
 	NAME=${TARGET_OPENSTACK_REL}-${TARGET_DISTRO}-archive-keyring
 	rm -rf ${NAME}-${VER}
 	mkdir -p ${NAME}-${VER}/debian/source
 	cd ${NAME}-${VER}
-	export DEBFULLNAME="Mirantis Jenkins"
-	export DEBEMAIL="jenkins@${HOST_FQDN}"
+	export DEBFULLNAME="Debian OpenStack Jenkins"
+	export DEBEMAIL="${THE_DEV_USER}@${HOST_FQDN}"
 	dch --create --package ${NAME} -D unstable --noquery --newversion 0.1 -m "Automatic archive package build."
-	sed -i 's/MAINTAINER <EMAIL>/Mirantis Jenkins <jenkins@'${HOST_FQDN}'>/' debian/changelog
+	sed -i 's/MAINTAINER <EMAIL>/Debian OpenStack <'${THE_DEV_USER}'@'${HOST_FQDN}'>/' debian/changelog
 	echo "3.0 (native)" >debian/source/format
 	echo 9 >debian/compat
 	echo "#!/usr/bin/make -f
@@ -247,19 +262,45 @@ fi
 
 exit 0
 " >debian/${NAME}.postinst
-	chown -R jenkins:jenkins .
-	su jenkins -c dpkg-buildpackage || true
+	chown -R ${THE_DEV_USER}:${THE_DEV_USER} .
+	su ${THE_DEV_USER} -c dpkg-buildpackage || true
 	FIRST_LETTER=`echo ${TARGET_OPENSTACK_REL} | awk '{print substr($0,0,2)}'`
 	cd ..
 	MYDEST=${REPO_ROOT}/debian/pool/${REPO_DEST}/main/${FIRST_LETTER}/${NAME}
 	MYDEST2=${REPO_ROOT}/debian/pool/${REPO_NOCHANGE_BACKPORT_DEST}/main/${FIRST_LETTER}/${NAME}
 	for i in ${MYDEST} ${MYDEST2} ; do
-		su jenkins -c "mkdir -p ${i}"
+		su ${THE_DEV_USER} -c "mkdir -p ${i}"
 		cp *.changes *.tar.xz *.deb *.dsc ${i}
-		chown -R jenkins:jenkins ${i}
+		chown -R ${THE_DEV_USER}:${THE_DEV_USER} ${i}
 	done
 	cd ${MYCWD}
 	rm -r ${TMPDIR}
+}
+
+configure_sbuildrc () {
+	GPG_KEY_ID=$(su ${THE_DEV_USER} -c "gpg --list-keys ${THE_DEV_USER} | grep ^pub | awk '{print \$2}' | cut -d/ -f2")
+	if [ "${DEV_OR_JENKINS}" = "jenkins" ] ; then
+		DOT_SBUILDRC_PATH=/var/lib/jenkins/.sbuildrc
+	else
+		DOT_SBUILDRC_PATH=/home/${THE_DEV_USER}/.sbuildrc
+	fi
+	if ! [ -r "${DOT_SBUILDRC_PATH}" ] ; then
+		echo "# don't remove this, Perl needs it:
+
+\$build_arch_all = 1;
+\$build_source = 1;
+\$distribution = '"${TARGET_DISTRO}"';
+\$run_lintian = 0;
+
+# Don't sign packages:
+#\$pgp_options = '-us -uc';
+
+# FIX THIS !!!
+\$key_id = '${GPG_KEY_ID}';
+
+1;
+" >${DOT_SBUILDRC_PATH}
+	fi
 }
 
 configure_sbuild () {
@@ -270,7 +311,7 @@ configure_sbuild () {
 	sbuild-update --keygen
 
 	# Add jenkins as a sbuild user
-	sbuild-adduser jenkins
+	sbuild-adduser ${THE_DEV_USER}
 
 	# Create the actual schroot env
 	if ! [ -e /var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ] ; then
@@ -300,8 +341,8 @@ configure_sbuild () {
 
 	MYCWD=`pwd`
 	cd /var/lib/jenkins
-	su jenkins -c pkgos-scan-repo
-	su jenkins -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
+	su ${THE_DEV_USER} -c pkgos-scan-repo
+	su ${THE_DEV_USER} -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
 	cd ${MYCWD}
 
 	# Add a hook to have both our repositories used inside the sbuild chroot
@@ -318,25 +359,6 @@ if [ \$STAGE = \"setup-start\" ] || [ \$STAGE = \"setup-recover\" ]; then
 	echo \"deb http://localhost/debian ${REPO_NOCHANGE_BACKPORT_DEST} main\" >\${CHROOT_PATH}/etc/apt/sources.list.d/openstack-backports.list
 fi" >>/etc/schroot/setup.d/80sources
 	chmod +x /etc/schroot/setup.d/80sources
-}
-
-configure_jenkins_sbuildrc () {
-	GPG_KEY_ID=$(su jenkins -c "gpg --list-keys | grep ^pub | awk '{print \$2}' | cut -d/ -f2")
-	echo "# don't remove this, Perl needs it:
-
-\$build_arch_all = 1;
-\$build_source = 1;
-\$distribution = '"${TARGET_DISTRO}"';
-\$run_lintian = 0;
-
-# Don't sign packages:
-#\$pgp_options = '-us -uc';
-
-# FIX THIS !!!
-\$key_id = '${GPG_KEY_ID}';
-
-1;
-" >/var/lib/jenkins/.sbuildrc
 }
 
 configure_jenkins_job_builder () {
@@ -379,19 +401,56 @@ restart_jenkins () {
 	service jenkins restart
 }
 
+##############################
+# ACTUAL START OF THE SCRIPT #
+##############################
+
+usage () {
+	echo "Wrong usage: $0 [dev|jenkins] <username>"
+	echo "the username 2nd param is only if you use the dev mode"
+	exit 1
+}
+
+if [ "${1}" = "dev" ] ; then
+	echo "Setting-up a developer machine."
+	DEV_OR_JENKINS=dev
+	shift
+	if [ -z "${1}" ] ; then
+		usage
+	fi
+	THE_DEV_USER=${1}
+	shift
+	if [ -n "${1}" ] ; then
+		usage
+	fi
+elif [ "${1}" = "jenkins" ] ; then
+	echo "Setting-up a Jenkins build server."
+	DEV_OR_JENKINS=jenkins
+	THE_DEV_USER=jenkins
+	shift
+	if [ -n "${1}" ] ; then
+		usage
+	fi
+else
+	usage
+fi
+
+exit 1
+
 detect_env
+[ "${DEV_OR_JENKINS}" = "jenkins" ] && configure_hostname
 install_all_software
-configure_hostname
 configure_apache
 configure_pure
 # This often fails because the list of plugins isn't fetched by Jenkins
 #install_jenkins_plugins
-configure_jenkins_dotgitconfig
-configure_jenkins_sudoers
-configure_jenkins_gpg_key
-configure_jenkins_sbuildrc
+[ "${DEV_OR_JENKINS}" = "jenkins" ] && configure_jenkins_dotgitconfig
+[ "${DEV_OR_JENKINS}" = "jenkins" ] && configure_jenkins_sudoers
+[ "${DEV_OR_JENKINS}" = "jenkins" ] && configure_jenkins_gpg_key
+[ "${DEV_OR_JENKINS}" = "dev" ] && check_user_gpg_key
+configure_sbuildrc
 build_ostack_archive_keyring_package
 configure_sbuild
-configure_jenkins_job_builder
+[ "${DEV_OR_JENKINS}" = "jenkins" ] && configure_jenkins_job_builder
 # This is needed so that jenkins can login into sbuild
-restart_jenkins
+[ "${DEV_OR_JENKINS}" = "jenkins" ] && restart_jenkins
