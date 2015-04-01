@@ -124,7 +124,7 @@ configure_pure () {
 	else
 		/usr/sbin/useradd -m ftp
 	fi
-	chown jenkins:jenkins /home/ftp
+	chown ${THE_DEV_USER}:${THE_DEV_USER} /home/ftp
 	rm -f /etc/pure-ftpd/conf/NoAnonymous
 	service pure-ftpd stop
 	sleep 2
@@ -188,7 +188,7 @@ check_user_gpg_key () {
 			echo "Genrating a gpg key for you..."
 			mkdir -p /home/${THE_DEV_USER}/.gnupg
 			chmod 700 /home/${THE_DEV_USER}/.gnupg
-			chmod 700 /var/lib/jenkins/.gnupg
+			chmod 700 /home/${THE_DEV_USER}/.gnupg
 	                echo "keyserver hkp://pool.sks-keyservers.net
 personal-digest-preferences SHA256
 default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
@@ -468,8 +468,6 @@ elif [ "${1}" = "jenkins" ] ; then
 else
 	usage
 fi
-
-exit 1
 
 detect_env
 [ "${DEV_OR_JENKINS}" = "jenkins" ] && configure_hostname
