@@ -315,11 +315,7 @@ exit 0
 
 configure_sbuildrc () {
 	GPG_KEY_ID=$(su ${THE_DEV_USER} -c "gpg --list-keys ${THE_DEV_USER} | grep ^pub | awk '{print \$2}' | cut -d/ -f2")
-	if [ "${DEV_OR_JENKINS}" = "jenkins" ] ; then
-		DOT_SBUILDRC_PATH=/var/lib/jenkins/.sbuildrc
-	else
-		DOT_SBUILDRC_PATH=/home/${THE_DEV_USER}/.sbuildrc
-	fi
+	DOT_SBUILDRC_PATH=${THE_USER_HOMEDIR}/.sbuildrc
 	if ! [ -r "${DOT_SBUILDRC_PATH}" ] ; then
 		echo "# don't remove this, Perl needs it:
 
@@ -376,7 +372,7 @@ configure_sbuild () {
 	# let's scan the tree in /home/ftp/debian/pool, and build a valid Debian repo
 
 	MYCWD=`pwd`
-	cd /var/lib/jenkins
+	cd ${THE_USER_HOMEDIR}
 	su ${THE_DEV_USER} -c pkgos-scan-repo
 	su ${THE_DEV_USER} -c pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
 	cd ${MYCWD}
@@ -459,6 +455,7 @@ if [ "${1}" = "dev" ] ; then
 	if [ -n "${1}" ] ; then
 		usage
 	fi
+	THE_USER_HOMEDIR=/home/${THE_DEV_USER}
 elif [ "${1}" = "jenkins" ] ; then
 	echo "Setting-up a Jenkins build server."
 	DEV_OR_JENKINS=jenkins
@@ -467,6 +464,7 @@ elif [ "${1}" = "jenkins" ] ; then
 	if [ -n "${1}" ] ; then
 		usage
 	fi
+	THE_USER_HOMEDIR=/var/lib/jenkins
 else
 	usage
 fi
