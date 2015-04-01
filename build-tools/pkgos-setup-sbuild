@@ -178,7 +178,7 @@ Expire-Date: 0
 " >${GPG_USER_HOMEDIR}/.gnupg/pkgos-gen-key-batchfile
 	fi
 	chown -R ${THE_DEV_USER}:${THE_DEV_USER} ${GPG_USER_HOMEDIR}/.gnupg
-	su ${THE_DEV_USER} -c 'gpg --gen-key --batch '${GPG_USER_HOMEDIR}'/.gnupg/gen-key-batchfile'
+	su ${THE_DEV_USER} -c 'gpg --gen-key --batch '${GPG_USER_HOMEDIR}'/.gnupg/pkgos-gen-key-batchfile'
 }
 
 configure_jenkins_gpg_key () {
@@ -198,6 +198,7 @@ check_user_gpg_key () {
 		read GEN_KEY
 		if [ -z "${GEN_KEY}" ] || [ "${GEN_KEY}" = "y" ] || [ "${GEN_KEY}" = "Y" ] ; then
 			echo "Genrating a gpg key for you..."
+			gen_the_dev_user_gpg_key /home/${THE_DEV_USER}
 		else
 			echo "No gpg key: exiting..."
 			exit 1
@@ -210,6 +211,7 @@ check_user_gpg_key () {
 		read GEN_KEY
 		if [ -z "${GEN_KEY}" ] || [ "${GEN_KEY}" = "y" ] || [ "${GEN_KEY}" = "Y" ] ; then
 			echo "Genrating a gpg key for you..."
+			gen_the_dev_user_gpg_key /home/${THE_DEV_USER}
 		else
 			echo "No gpg key: exiting..."
 			exit 1
