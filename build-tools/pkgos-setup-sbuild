@@ -405,7 +405,7 @@ allow_duplicates=False
 [jenkins]
 user=zigo
 password=${JENKINS_JOBS_BUILDER_PASS}
-url=https://${HOST_FQDN}/
+url=http://localhost:8080/
 " >/etc/jenkins_jobs/jenkins_jobs.ini
 	echo "" >job.yaml
 	for i in `cat /etc/pkgos/build-list` ; do
