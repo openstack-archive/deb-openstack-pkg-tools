@@ -157,7 +157,7 @@ configure_jenkins_sudoers () {
 # @param: $1 homedir of the GPG user
 gen_the_dev_user_gpg_key () {
 	GPG_USER_HOMEDIR=${1}
-	mkdir -p ${HOMEDIR}/.gnupg
+	mkdir -p ${GPG_USER_HOMEDIR}/.gnupg
 	chmod 700 ${GPG_USER_HOMEDIR}/.gnupg
 	chmod 700 ${GPG_USER_HOMEDIR}/.gnupg
 	if ! [ -r ${GPG_USER_HOMEDIR}/.gnupg/gpg.conf ] ; then
