@@ -150,7 +150,7 @@ configure_jenkins_dotgitconfig () {
 }
 
 configure_jenkins_sudoers () {
-	echo "jenkins ALL = NOPASSWD: ALL" >/etc/sudoers.d/jenkins
+	echo "jenkins ALL = NOPASSWD: /usr/bin/sbuild-update -udcar ${TARGET_DISTRO}-amd64" >/etc/sudoers.d/jenkins
 	chmod 440 /etc/sudoers.d/jenkins
 }
 
