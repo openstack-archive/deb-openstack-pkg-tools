@@ -40,7 +40,7 @@ is_build_depends () {
 	done
 }
 
-EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-novaclient python-swiftclient"
+EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-novaclient python-swiftclient python-oslo.config"
 has_1_in_epoc () {
 	HAS_1_IN_EPOC="no"
 	for i in ${EPOC_1_IN} ; do
@@ -69,6 +69,7 @@ parse_and_print () {
 		REMOVE_BUILD_DEPENDS="yes"
 	fi
 	DEP_LIST=""
+#	echo `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP`
 	for i in `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP` ; do
 #		echo "Line ---> $i"
 		VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
@@ -107,11 +108,25 @@ parse_and_print () {
 				if [ "${HAS_1_IN_EPOC}" = "yes" ] ; then
 					FIRST_NUMS="1:${FIRST_NUMS}"
 				fi
+				# If there's a fake-jessie-mirror folder in /etc/pkgos
+				# use that one with madison-lite to check if the version
+				# of the package is already in Jessie.
+				if [ -d /etc/pkgos/fake-jessie-mirror ] ; then
+					STABLE_VERSION=`madison-lite -a all,amd64 --mirror /etc/pkgos/fake-${TARGET_DISTRO}-mirror ${PKG} | awk '{print $3}'`
+					#echo "dpkg --compare-versions ${STABLE_VERSION} gt ${FIRST_NUMS}"
+					if dpkg --compare-versions ${STABLE_VERSION} gt ${FIRST_NUMS} ; then
+						VERSION_TO_DEPEND_ON=""
+					else
+						VERSION_TO_DEPEND_ON=" (${FIRST_SIGN} ${FIRST_NUMS})"
+					fi
+				else
+					VERSION_TO_DEPEND_ON=" (${FIRST_SIGN} ${FIRST_NUMS})"
+				fi
 				if [ -z "${DEP_LIST}" ] ; then
-					DEP_LIST="$PKG (${FIRST_SIGN} ${FIRST_NUMS})"
+					DEP_LIST="${PKG}${VERSION_TO_DEPEND_ON}"
 					#echo " $PKG (${FIRST_SIGN} ${FIRST_NUMS}),"
 				else
-					DEP_LIST="${DEP_LIST}\n$PKG (${FIRST_SIGN} ${FIRST_NUMS})"
+					DEP_LIST="${DEP_LIST}\n$PKG${VERSION_TO_DEPEND_ON}"
 				fi
 			else
 				if [ -z "${DEP_LIST}" ] ; then
@@ -155,12 +170,14 @@ calc_substitue_list () {
 			EXP="$EXP -e s/$SOURCE/$DEST/"
 		done </etc/pkgos/substitute
 	fi
+#	echo \'$EXP\'
 }
 
 calc_substitue_list
 
 if [ "${1}" ] ; then
 	parse_and_print ${1}
+	format_output "Build-Depends:"
 else
 	echo "Build-Depends: debhelper (>= 9),
                dh-python,

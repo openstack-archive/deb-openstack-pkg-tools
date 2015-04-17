@@ -1,0 +1,30 @@
+#!/bin/sh
+# This script prepares a /etc/pkgos/fake-${TARGET_DISTRO}-mirror folder
+# with Packages.gz and Sources.gz files so that we can later on use
+# the madison-lite script when using pkgos-parse-requirements.
+# Indeed, using rmadison for this task is a way too slow, considering the
+# average amount of dependency in a typical OpenStack component.
+
+set -e
+
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
+
+# Create the folder and remove the Packages.gz / Sources.gz
+DEST_DIST_DIR=/etc/pkgos/fake-${TARGET_DISTRO}-mirror/dists/${TARGET_DISTRO}/main
+for i in binary-all binary-amd64 source ; do
+	if ! [ -d ${DEST_DIST_DIR}/$i ] ; then
+		mkdir -p ${DEST_DIST_DIR}/$i
+	fi
+	if [ "$i" = "source" ] ; then
+		GZFILE=Sources.gz
+	else
+		GZFILE=Packages.gz
+	fi
+	rm -f ${DEST_DIST_DIR}/$i/$GZFILE
+	wget ${CLOSEST_DEBIAN_MIRROR}/dists/${TARGET_DISTRO}/main/$i/$GZFILE -O ${DEST_DIST_DIR}/$i/$GZFILE
+done
