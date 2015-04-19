@@ -2,6 +2,13 @@
 
 set -e
 
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
+
 if [ "${1}" = "-h" ] ; then
 	echo "This utility attemps to parse an OpenStack requirements.txt file"
 	echo "as input, and produce a list of Debian dependencies as output."
@@ -40,12 +47,22 @@ is_build_depends () {
 	done
 }
 
-EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-novaclient python-swiftclient python-oslo.config"
+EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-swiftclient python-oslo.config"
 has_1_in_epoc () {
 	HAS_1_IN_EPOC="no"
 	for i in ${EPOC_1_IN} ; do
 		if [ "${i}" = ${1} ] ; then
 			HAS_1_IN_EPOC="yes"
+		fi
+	done
+}
+
+EPOC_2_IN="python-novaclient"
+has_2_in_epoc () {
+	HAS_2_IN_EPOC="no"
+	for i in ${EPOC_2_IN} ; do
+		if [ "${i}" = ${1} ] ; then
+			HAS_2_IN_EPOC="yes"
 		fi
 	done
 }
@@ -108,16 +125,25 @@ parse_and_print () {
 				if [ "${HAS_1_IN_EPOC}" = "yes" ] ; then
 					FIRST_NUMS="1:${FIRST_NUMS}"
 				fi
+				has_2_in_epoc $PKG
+				if [ "${HAS_2_IN_EPOC}" = "yes" ] ; then
+					FIRST_NUMS="2:${FIRST_NUMS}"
+				fi
 				# If there's a fake-jessie-mirror folder in /etc/pkgos
 				# use that one with madison-lite to check if the version
 				# of the package is already in Jessie.
 				if [ -d /etc/pkgos/fake-jessie-mirror ] ; then
 					STABLE_VERSION=`madison-lite -a all,amd64 --mirror /etc/pkgos/fake-${TARGET_DISTRO}-mirror ${PKG} | awk '{print $3}'`
-					#echo "dpkg --compare-versions ${STABLE_VERSION} gt ${FIRST_NUMS}"
-					if dpkg --compare-versions ${STABLE_VERSION} gt ${FIRST_NUMS} ; then
-						VERSION_TO_DEPEND_ON=""
-					else
+					# Make sure that the package is in the stable repo
+					if [ -z "${STABLE_VERSION}" ] ; then
 						VERSION_TO_DEPEND_ON=" (${FIRST_SIGN} ${FIRST_NUMS})"
+					else
+						#echo "Comparing for ${PKG}: dpkg --compare-versions ${STABLE_VERSION} gt ${FIRST_NUMS}"
+						if dpkg --compare-versions ${STABLE_VERSION} gt ${FIRST_NUMS} ; then
+							VERSION_TO_DEPEND_ON=""
+						else
+							VERSION_TO_DEPEND_ON=" (${FIRST_SIGN} ${FIRST_NUMS})"
+						fi
 					fi
 				else
 					VERSION_TO_DEPEND_ON=" (${FIRST_SIGN} ${FIRST_NUMS})"
@@ -181,13 +207,18 @@ if [ "${1}" ] ; then
 else
 	echo "Build-Depends: debhelper (>= 9),
                dh-python,
-               openstack-pkg-tools,
+               dh-systemd,
+               openstack-pkg-tools (>= 23~),
+               po-debconf,
                python-all (>= 2.6.6-3~),
                python-pbr,
-               python-setuptools,
                python-sphinx,"
 	# Gather the dependencies.
-	parse_and_print test-requirements.txt build-depends
+	if [ -e test-requirements-py2.txt ] ; then
+		parse_and_print test-requirements-py2.txt build-depends
+	else
+		parse_and_print test-requirements.txt build-depends
+	fi
 	DEP_LIST_TESTS=${DEP_LIST}
 	parse_and_print requirements.txt
 	DEP_LIST_RUNTIME=${DEP_LIST}
