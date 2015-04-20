@@ -14,8 +14,8 @@ DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f
 override_dh_builddeb:
 	dh_builddeb -- -Zxz -z9
 
-override_dh_installinit:
-	# Create the init scripts from the template
+gen-init-configurations:
+	# Create the init scripts and systemd unit files from the template
 	for i in `ls -1 debian/*.init.in` ; do \
 		MYINIT=`echo $$i | sed s/.init.in//` ; \
 		cp $$i $$MYINIT.init ; \
@@ -34,16 +34,23 @@ override_dh_installinit:
 			pkgos-gen-upstart-job $$i ; \
 		fi \
 	done
-	# Generate the systemd unit file
-	# Note: because dh_systemd_enable is called by the
-	# dh sequencer *before* dh_installinit, we have
-	# to process it manually.
-	for i in `ls debian/*.init.in` ; do \
-		pkgos-gen-systemd-unit $$i ; \
-		MYSERVICE=`echo $$i | sed 's/debian\///'` ; \
-		MYSERVICE=`echo $$MYSERVICE | sed 's/.init.in/.service/'` ; \
-		dh_systemd_enable $$MYSERVICE ; \
+	# If there's a service.in file, use that one instead of the generated one
+	for i in `ls -1 debian/*.service.in`; do \
+		MYPKG=`echo $$i | sed s/.service.in//` ; \
+		cp $$MYPKG.service.in $$MYPKG.service ; \
 	done
+	# Generate the systemd unit if there's no already existing .service.in
+	for i in `ls debian/*.init.in` ; do \
+		MYINIT=`echo $$i | sed s/.init.in/.service.in/` ; \
+		if ! [ -e $$MYINIT ] ; then \
+			pkgos-gen-systemd-unit $$i ; \
+		fi \
+	done
+
+override_dh_systemd_enable: gen-init-configurations
+	dh_systemd_enable
+
+override_dh_installinit: gen-init-configurations
 	dh_installinit --error-handler=true
 
 gen-author-list:

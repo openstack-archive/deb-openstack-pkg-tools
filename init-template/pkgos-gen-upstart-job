@@ -36,7 +36,6 @@ if [ -z "${CONFIG_FILE}" ] ; then
 	CONFIG_FILE=/etc/${PROJECT_NAME}/${PROJECT_NAME}.conf
 fi
 LOGFILE=/var/log/${PROJECT_NAME}/${NAME}.log
-DAEMON_ARGS="${DAEMON_ARGS} --config-file=${CONFIG_FILE}"
 
 echo "description \"${DESC}\"
 author \"Thomas Goirand <zigo@debian.org>\"
@@ -45,6 +44,9 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 
 chdir /var/run
+
+respawn
+limit nofile 65535 65535
 
 pre-start script
 	for i in lock run log lib ; do

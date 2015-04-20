@@ -39,6 +39,7 @@ ExecStartPre=/bin/mkdir -p /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /v
 ExecStartPre=/bin/chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
 ExecStart=${SCRIPTNAME} systemd-start
 Restart=on-failure
+LimitNOFILE=65535
 
 [Install]
 WantedBy=multi-user.target

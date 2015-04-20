@@ -67,7 +67,7 @@ has_2_in_epoc () {
 	done
 }
 
-NO_PYTHON_PREFIX="alembic testrepository subunit websockify"
+NO_PYTHON_PREFIX="alembic testrepository subunit websockify cliff-tablib"
 is_python_prefixed () {
 	PY_PREFIX="yes"
 	for i in ${NO_PYTHON_PREFIX} ; do
