@@ -1,6 +1,7 @@
-openstack-pkg-tools (24) UNRELEASED; urgency=medium
+openstack-pkg-tools (24) unstable; urgency=medium
 
   * Added tooling for sbuild.
+  * Uploading to unstable.
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 17 Apr 2015 10:48:33 +0200
 
