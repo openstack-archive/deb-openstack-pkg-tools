@@ -25,12 +25,22 @@ fi
 # Some packages should never be in the dependencies in Debian,
 # as they are included in Python 2.7. If you find one that is
 # missing, just add it to the list it here.
-BLACK_LIST="discover argparse ordereddict"
+BLACK_LIST="discover argparse ordereddict doc8"
 is_blacklisted () {
 	ISBLACKLISTED="no"
 	for i in $BLACK_LIST ; do
 		if [ "${i}" = "${1}" ] ; then
 			ISBLACKLISTED="yes"
+		fi
+	done
+}
+
+BLACK_LIST_PY3="python3-testrepository python3-oslosphinx python3-coverage"
+is_py3_blacklisted () {
+	IS_PY3BLACKLISTED="no"
+	for i in $BLACK_LIST_PY3 ; do
+		if [ "${i}" = "${1}" ] ; then
+			IS_PY3BLACKLISTED="yes"
 		fi
 	done
 }
@@ -67,7 +77,7 @@ has_2_in_epoc () {
 	done
 }
 
-NO_PYTHON_PREFIX="alembic testrepository subunit websockify cliff-tablib"
+NO_PYTHON_PREFIX="alembic testrepository subunit websockify"
 is_python_prefixed () {
 	PY_PREFIX="yes"
 	for i in ${NO_PYTHON_PREFIX} ; do
@@ -82,9 +92,10 @@ is_python_prefixed () {
 parse_and_print () {
 	INPUT_FILE=$1
 	REMOVE_BUILD_DEPENDS="no"
-	if [ -n "${2}" ] ; then
+	if [ "${2}" = "build-depends" ] ; then
 		REMOVE_BUILD_DEPENDS="yes"
 	fi
+	PYVERS=${3}
 	DEP_LIST=""
 #	echo `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP`
 	for i in `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP` ; do
@@ -95,21 +106,21 @@ parse_and_print () {
 		else
 			PKG=`echo $i | sed -e s/python-//`
 		fi
-		PKG=`echo $PKG | sed -e s/_/-/`
-		is_blacklisted $PKG
+		PKG=`echo ${PKG} | sed -e s/_/-/`
+		is_blacklisted ${PKG}
 		ISBUILDDEPENDS="no"
 		if [ REMOVE_BUILD_DEPENDS="yes" ] ; then
-			is_build_depends $PKG
+			is_build_depends ${PKG}
 		fi
 		if [ $ISBLACKLISTED = "no" ] && [ ${ISBUILDDEPENDS} = "no" ]; then
 			is_python_prefixed ${PKG}
 			if [ ${PY_PREFIX} = "yes" ] ; then
-				PKG=python-$PKG
+				PKG=python-${PKG}
 			fi
 			# Convert the package name into lowercase, as Debian
 			# doesn't have any upper case in package names
-			PKG=`echo $PKG | tr '[:upper:]' '[:lower:]'`
-			if [ -n "$VERS" ] && [ $PKG != "python-hacking" ] ; then
+			PKG=`echo ${PKG} | tr '[:upper:]' '[:lower:]'`
+			if [ -n "$VERS" ] && [ ${PKG} != "python-hacking" ] ; then
 				# If there's a a version-depends, convert the pip style
 				# of dependency to the Debian one (ie: >> instead of >)
 				FIRST_CONSTR=`echo $VERS | cut -d, -f1`
@@ -121,11 +132,11 @@ parse_and_print () {
 				if [ "${FIRST_SIGN}" = '>' ] ; then
 					FIRST_SIGN='>>'
 				fi
-				has_1_in_epoc $PKG
+				has_1_in_epoc ${PKG}
 				if [ "${HAS_1_IN_EPOC}" = "yes" ] ; then
 					FIRST_NUMS="1:${FIRST_NUMS}"
 				fi
-				has_2_in_epoc $PKG
+				has_2_in_epoc ${PKG}
 				if [ "${HAS_2_IN_EPOC}" = "yes" ] ; then
 					FIRST_NUMS="2:${FIRST_NUMS}"
 				fi
@@ -148,21 +159,28 @@ parse_and_print () {
 				else
 					VERSION_TO_DEPEND_ON=" (${FIRST_SIGN} ${FIRST_NUMS})"
 				fi
+				if [ "${PYVERS}" = 3 ] ; then
+					PKG=`echo ${PKG} | sed s/python-/python3-/`
+					is_py3_blacklisted ${PKG}
+					if [ ${IS_PY3BLACKLISTED} = "yes" ] ; then
+						continue
+					fi
+				fi
 				if [ -z "${DEP_LIST}" ] ; then
 					DEP_LIST="${PKG}${VERSION_TO_DEPEND_ON}"
-					#echo " $PKG (${FIRST_SIGN} ${FIRST_NUMS}),"
+					#echo " ${PKG} (${FIRST_SIGN} ${FIRST_NUMS}),"
 				else
-					DEP_LIST="${DEP_LIST}\n$PKG${VERSION_TO_DEPEND_ON}"
+					DEP_LIST="${DEP_LIST}\n${PKG}${VERSION_TO_DEPEND_ON}"
 				fi
 			else
 				if [ -z "${DEP_LIST}" ] ; then
-					DEP_LIST="$PKG"
+					DEP_LIST="${PKG}"
 				else
-					#echo " $PKG,"
-					DEP_LIST="${DEP_LIST}\n$PKG"
+					#echo " ${PKG},"
+					DEP_LIST="${DEP_LIST}\n${PKG}"
 				fi
 			fi
-			#echo "Package: $PKG\t\tFirst sign: ${FIRST_SIGN}\t\tFirst num: ${FIRST_NUMS}..."
+			#echo "Package: ${PKG}\t\tFirst sign: ${FIRST_SIGN}\t\tFirst num: ${FIRST_NUMS}..."
 		fi
 	done
 }
@@ -205,23 +223,71 @@ if [ "${1}" ] ; then
 	parse_and_print ${1}
 	format_output "Build-Depends:"
 else
+	# Check if we declared Python3 support in debian/control
+	HAS_PY3_SUPPORT="no"
+	if [ -r debian/control ] ; then
+		HAS_PYTHON3_PKG_IN_CTRL=`cat debian/control | grep "Package: python3"`
+		if [ -n "${HAS_PYTHON3_PKG_IN_CTRL}" ] ; then
+			HAS_PY3_SUPPORT="yes"
+		fi
+	fi
+	# If there's a debian/*.init.in, then we want dh-systemd as build-depends
+	INIT=`find debian/ -iname '*init.in'`
+	if [ -n "${INIT}" ] ; then
+		DH_SYSTEMD="\n               dh-systemd,"
+		OSTACK_PKG_TOOLS_VERS=" (>= 23~)"
+	else
+		DH_SYSTEMD=""
+		OSTACK_PKG_TOOLS_VERS=""
+	fi
+	TEMPLATES=`find debian/ -iname '*.templates'`
+	if [ -n "${TEMPLATES}" ] ; then
+		PO_DEBCONF="\n               po-debconf,"
+	else
+		PO_DEBCONF=""
+	fi
 	echo "Build-Depends: debhelper (>= 9),
-               dh-python,
-               dh-systemd,
-               openstack-pkg-tools (>= 23~),
-               po-debconf,
-               python-all (>= 2.6.6-3~),
+               dh-python,${DH_SYSTEMD}
+               openstack-pkg-tools${OSTACK_PKG_TOOLS_VERS},${PO_DEBCONF}
+               python-all,
                python-pbr,
+               python-setuptools,
                python-sphinx,"
+	# Adds python3 support packages
+	if [ "${HAS_PY3_SUPPORT}" = "yes" ] ; then
+		echo "               python3-all,
+               python3-pbr,
+               python3-setuptools,"
+	fi
+
 	# Gather the dependencies.
 	if [ -e test-requirements-py2.txt ] ; then
-		parse_and_print test-requirements-py2.txt build-depends
+		parse_and_print test-requirements-py2.txt build-depends 2
 	else
-		parse_and_print test-requirements.txt build-depends
+		parse_and_print test-requirements.txt build-depends 2
 	fi
 	DEP_LIST_TESTS=${DEP_LIST}
-	parse_and_print requirements.txt
+	parse_and_print requirements.txt depends
 	DEP_LIST_RUNTIME=${DEP_LIST}
+
+	# If the package has python3 support, let's try to also print python3 build-depends
+	if [ "${HAS_PY3_SUPPORT}" = "yes" ] ; then
+		parse_and_print requirements.txt depends 3
+		DEP_LIST_TESTS="${DEP_LIST_TESTS}\n${DEP_LIST}"
+		if [ -e test-requirements-py3.txt ] ; then
+			parse_and_print test-requirements-py3.txt build-depends 3
+		else
+			parse_and_print test-requirements.txt build-depends 3
+		fi
+		DEP_LIST_TESTS="${DEP_LIST_TESTS}\n${DEP_LIST}"
+	fi
+
+	if [ -r .testr.conf ] ; then
+		DEP_LIST_TESTS="${DEP_LIST_TESTS}\ntestrepository\nsubunit"
+		if [ -r debian/control ] && [ -n "${HAS_PYTHON3}" ] ; then
+			DEP_LIST_TESTS="${DEP_LIST_TESTS}\npython3-subunit"
+		fi
+	fi
 
 	# Format the output
 	DEPS="${DEP_LIST_RUNTIME}\n${DEP_LIST_TESTS}"
