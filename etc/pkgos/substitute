@@ -1,3 +1,16 @@
 pyopenssl python-openssl
 sqlalchemy-migrate migrate
 mysql-python python-mysqldb
+ibm_db_sa python-ibm-db-sa
+msgpack-python python-msgpack
+pytz python-tz
+futures python-concurrent.futures
+pyzmq python-zmq
+qpid-python python-qpid
+pyyaml python-yaml
+pycrypto python-crypto
+python-memcached python-memcache
+pysqlite python-pysqlite2
+pysendfile python-sendfile
+kafka-python python-kafka
+pysnmp python-pysnmp4

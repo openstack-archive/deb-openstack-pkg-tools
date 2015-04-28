@@ -25,7 +25,7 @@ fi
 # Some packages should never be in the dependencies in Debian,
 # as they are included in Python 2.7. If you find one that is
 # missing, just add it to the list it here.
-BLACK_LIST="discover argparse ordereddict doc8"
+BLACK_LIST="discover argparse ordereddict doc8 pylint"
 is_blacklisted () {
 	ISBLACKLISTED="no"
 	for i in $BLACK_LIST ; do
@@ -77,7 +77,7 @@ has_2_in_epoc () {
 	done
 }
 
-NO_PYTHON_PREFIX="alembic testrepository subunit websockify"
+NO_PYTHON_PREFIX="alembic testrepository subunit websockify cliff-tablib"
 is_python_prefixed () {
 	PY_PREFIX="yes"
 	for i in ${NO_PYTHON_PREFIX} ; do
@@ -226,7 +226,7 @@ else
 	# Check if we declared Python3 support in debian/control
 	HAS_PY3_SUPPORT="no"
 	if [ -r debian/control ] ; then
-		HAS_PYTHON3_PKG_IN_CTRL=`cat debian/control | grep "Package: python3"`
+		HAS_PYTHON3_PKG_IN_CTRL=`cat debian/control | grep "Package: python3" || true`
 		if [ -n "${HAS_PYTHON3_PKG_IN_CTRL}" ] ; then
 			HAS_PY3_SUPPORT="yes"
 		fi
@@ -267,7 +267,11 @@ else
 		parse_and_print test-requirements.txt build-depends 2
 	fi
 	DEP_LIST_TESTS=${DEP_LIST}
-	parse_and_print requirements.txt depends
+	if [ -r requirements-py2.txt ] ; then
+		parse_and_print requirements-py2.txt depends
+	else
+		parse_and_print requirements.txt depends
+	fi
 	DEP_LIST_RUNTIME=${DEP_LIST}
 
 	# If the package has python3 support, let's try to also print python3 build-depends
