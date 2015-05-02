@@ -25,7 +25,7 @@ fi
 # Some packages should never be in the dependencies in Debian,
 # as they are included in Python 2.7. If you find one that is
 # missing, just add it to the list it here.
-BLACK_LIST="discover argparse ordereddict doc8 pylint"
+BLACK_LIST="discover argparse ordereddict doc8 pylint flake8 pyflakes pep8"
 is_blacklisted () {
 	ISBLACKLISTED="no"
 	for i in $BLACK_LIST ; do
@@ -35,7 +35,7 @@ is_blacklisted () {
 	done
 }
 
-BLACK_LIST_PY3="python3-testrepository python3-oslosphinx python3-coverage"
+BLACK_LIST_PY3="python3-testrepository python3-oslosphinx python3-coverage python3-concurrent.futures"
 is_py3_blacklisted () {
 	IS_PY3BLACKLISTED="no"
 	for i in $BLACK_LIST_PY3 ; do
