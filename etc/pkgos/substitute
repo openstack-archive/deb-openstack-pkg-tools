@@ -14,3 +14,8 @@ pysqlite python-pysqlite2
 pysendfile python-sendfile
 kafka-python python-kafka
 pysnmp python-pysnmp4
+requests-aws python-awsauth
+django_openstack_auth python-openstack-auth
+django_compressor python-compressor
+beautifulsoup4 python-bs4
+gitpython python-git
