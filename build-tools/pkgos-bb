@@ -93,6 +93,7 @@ sbuild
 cd ..
 rm ${SOURCE_NAME}_${DEB_VERSION}~${BPO_POSTFIX}_amd64.build
 TARGET_FTP_FOLDER=${REPO_ROOT}/debian/pool/${REPO_NOCHANGE_BACKPORT_DEST}/main/${PKG_NAME_FIRST_CHAR}/$SOURCE_NAME
+rm -rf ${TARGET_FTP_FOLDER}
 mkdir -p ${TARGET_FTP_FOLDER}
 cp *bpo* *.orig.tar.* ${TARGET_FTP_FOLDER}
 
