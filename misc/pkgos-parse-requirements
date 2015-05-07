@@ -100,13 +100,18 @@ parse_and_print () {
 #	echo `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP`
 	for i in `cat ${INPUT_FILE} | grep -v '^#' | grep -v '^[ \t]*$' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | sed $EXP` ; do
 #		echo "Line ---> $i"
-		VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
+		if echo $i | grep -q -e '^http://' ; then
+			i=`echo $i | cut -d'=' -f2`
+			VERS=""
+		else
+			VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
+		fi
 		if [ -n "$VERS" ] ; then
 			PKG=`echo $i | sed -e "s/$VERS//" | sed -e s/python-//`
 		else
 			PKG=`echo $i | sed -e s/python-//`
 		fi
-		PKG=`echo ${PKG} | sed -e s/_/-/`
+		PKG=`echo ${PKG} | sed -e s/_/-/g`
 		is_blacklisted ${PKG}
 		ISBUILDDEPENDS="no"
 		if [ REMOVE_BUILD_DEPENDS="yes" ] ; then
