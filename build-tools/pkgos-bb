@@ -84,7 +84,7 @@ fi
 # Extract the source and make it a backport
 dpkg-source -x *.dsc
 cd ${SOURCE_NAME}-${UPSTREAM_VERSION}
-dch --newversion ${DEB_VERSION}~${BPO_POSTFIX} -b --allow-lower-version -m  "Rebuilt by zigo's BPO script."
+dch --newversion ${DEB_VERSION}~${BPO_POSTFIX} -b --allow-lower-version --distribution ${TARGET_DISTRO}-backports -m  "Rebuilt for ${TARGET_DISTRO}."
 
 # Build the package
 sbuild
