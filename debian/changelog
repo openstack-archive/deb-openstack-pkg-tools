@@ -1,3 +1,9 @@
+openstack-pkg-tools (25) UNRELEASED; urgency=medium
+
+  * Add "respawn limit" stanza to pkgos-gen-upstart-job script template.
+
+ -- Ivan Udovichenko <iudovichenko@mirantis.com>  Wed, 27 May 2015 11:44:16 +0300
+
 openstack-pkg-tools (24) unstable; urgency=medium
 
   * Added tooling for sbuild.
