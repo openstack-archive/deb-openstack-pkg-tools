@@ -1,6 +1,7 @@
 openstack-pkg-tools (25) unstable; urgency=medium
 
   * /var/log/<PROJ> folders are now owned by the adm group (Closes: #781792).
+  * Add "respawn limit" stanza to pkgos-gen-upstart-job script template.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 01 Jun 2015 12:14:43 +0200
 
