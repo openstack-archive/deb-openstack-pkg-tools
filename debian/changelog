@@ -1,3 +1,9 @@
+openstack-pkg-tools (25) unstable; urgency=medium
+
+  * /var/log/<PROJ> folders are now owned by the adm group (Closes: #781792).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 01 Jun 2015 12:14:43 +0200
+
 openstack-pkg-tools (24) unstable; urgency=medium
 
   * Added tooling for sbuild.
