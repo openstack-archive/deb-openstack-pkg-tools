@@ -112,7 +112,7 @@ configure_apache () {
 </IfModule>
 " >${APACHE_SSL_VHOST_CONF_FULL_PATH}
 	a2ensite ${APACHE_SSL_VHOST_CONF}
-	service apache2 restart
+	invoke-rc.d apache2 restart
 	if [ ! -e /var/www/html/debian ] && [ ! -h /var/www/html/debian ] ; then
 		ln -s /home/ftp/debian /var/www/html/debian
 	fi
@@ -126,9 +126,9 @@ configure_pure () {
 	fi
 	chown ${THE_DEV_USER}:${THE_DEV_USER} /home/ftp
 	rm -f /etc/pure-ftpd/conf/NoAnonymous
-	service pure-ftpd stop
+	invoke-rc.d pure-ftpd stop
 	sleep 2
-	service pure-ftpd start
+	invoke-rc.d pure-ftpd start
 }
 
 install_jenkins_plugins () {

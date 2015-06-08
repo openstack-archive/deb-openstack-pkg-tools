@@ -1,3 +1,10 @@
+openstack-pkg-tools (26) unstable; urgency=medium
+
+  * build-tools/pkgos-setup-sbuild:
+    - Using invoke-rc.d instead of service, as it honores /usr/sbin/policy-rc.d
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 01 Jun 2015 17:33:57 +0200
+
 openstack-pkg-tools (25) unstable; urgency=medium
 
   * /var/log/<PROJ> folders are now owned by the adm group (Closes: #781792).
