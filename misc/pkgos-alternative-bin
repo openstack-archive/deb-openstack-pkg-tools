@@ -1,0 +1,82 @@
+#!/bin/sh
+
+set -e
+
+usage () {
+	echo "$0 PKG-NAME bin-name-1 [ bin-name-2 ...]"
+	exit 1
+}
+
+if [ $# -lt 2 ] ; then
+	usage
+fi
+
+PKG_NAME=${1}
+PKG_PY2=python-${1}
+PKG_PY3=python3-${1}
+shift
+
+# postinst
+echo "#!/bin/sh
+
+set -e
+
+if [ \"\$1\" = \"configure\" ] ; then" >debian/$PKG_PY2.postinst
+cp debian/$PKG_PY2.postinst debian/$PKG_PY3.postinst
+
+# postrm
+echo "#!/bin/sh
+
+set -e
+
+if [ \"\$1\" = \"remove\" ] || [ \"\$1\" = \"disappear\" ] ; then" >debian/$PKG_PY2.postrm
+cp debian/$PKG_PY2.postrm debian/$PKG_PY3.postrm
+
+# postrm
+echo "#!/bin/sh
+
+set -e
+
+if [ \"\$1\" = \"remove\" ] ; then" >debian/$PKG_PY2.prerm
+cp debian/$PKG_PY2.prerm debian/$PKG_PY3.prerm
+
+RULES_ENTRY=""
+
+while [ -n "${1}" ] ; do
+	BIN_UTIL_NAME=$1
+	shift
+	echo "	update-alternatives --install /usr/bin/${BIN_UTIL_NAME} ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME} 300" >>debian/$PKG_PY2.postinst
+	echo "	update-alternatives --install /usr/bin/${BIN_UTIL_NAME} ${BIN_UTIL_NAME} /usr/bin/python3-${BIN_UTIL_NAME} 200" >>debian/$PKG_PY3.postinst
+	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY2.postrm
+	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY3.postrm
+	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY2.prerm
+	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY3.prerm
+	RULES_ENTRY="${RULES_ENTRY}\n\tmv \$(CURDIR)/debian/${PKG_PY2}/usr/bin/${BIN_UTIL_NAME} \$(CURDIR)/debian/${PKG_PY2}/usr/bin/python2-${BIN_UTIL_NAME}"
+	RULES_ENTRY="${RULES_ENTRY}\n\tmv \$(CURDIR)/debian/${PKG_PY3}/usr/bin/${BIN_UTIL_NAME} \$(CURDIR)/debian/${PKG_PY3}/usr/bin/python3-${BIN_UTIL_NAME}"
+done
+
+for i in postinst prerm postrm ; do
+	echo "fi
+
+#DEBHELPER#
+
+exit 0">>debian/$PKG_PY2.$i
+	echo "fi
+
+#DEBHELPER#
+
+exit 0">>debian/$PKG_PY3.$i
+done
+
+echo "I created the below maintainer scripts for you:
+- debian/$PKG_PY2.postinst
+- debian/$PKG_PY3.postinst
+- debian/$PKG_PY2.postrm
+- debian/$PKG_PY3.postrm
+- debian/$PKG_PY2.prerm
+- debian/$PKG_PY3.prerm
+
+Please make sure to insert this in your debian/rules:
+${RULES_ENTRY}
+"
+exit 0

@@ -1,3 +1,10 @@
+openstack-pkg-tools (27) unstable; urgency=medium
+
+  * Added pkgos-alternative-bin to make it easy to handle alternatives as
+    /usr/bin/python{2,3}-something.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 10 Jun 2015 15:13:42 +0200
+
 openstack-pkg-tools (26) unstable; urgency=medium
 
   * build-tools/pkgos-setup-sbuild:
