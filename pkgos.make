@@ -87,6 +87,14 @@ gen-orig-xz:
 	[ ! -e ../build-area ] && mkdir ../build-area || true
 	[ ! -e ../build-area/$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] && cp ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ../build-area
 
+gen-orig-gz:
+	git tag -v $(GIT_TAG) || true
+	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.gz ] ; then \
+		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(GIT_TAG) | gzip >../$(DEBPKGNAME)_$(VERSION).orig.tar.gz ; \
+	fi
+	[ ! -e ../build-area ] && mkdir ../build-area || true
+	[ ! -e ../build-area/$(DEBPKGNAME)_$(VERSION).orig.tar.gz ] && cp ../$(DEBPKGNAME)_$(VERSION).orig.tar.gz ../build-area
+
 get-master-branch:
 	if ! git checkout master ; then \
 		echo "No upstream branch: checking out" ; \
