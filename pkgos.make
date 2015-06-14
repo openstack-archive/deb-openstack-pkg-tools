@@ -10,10 +10,6 @@ GIT_TAG		?= $(shell echo '$(VERSION)' | sed -e 's/~/_/')
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f2 | awk '{print $1}')
 
-# Activate xz compression
-override_dh_builddeb:
-	dh_builddeb -- -Zxz -z9
-
 gen-init-configurations:
 	# Create the init scripts and systemd unit files from the template
 	for i in `ls -1 debian/*.init.in` ; do \

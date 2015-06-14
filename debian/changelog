@@ -1,14 +1,11 @@
-openstack-pkg-tools (28) UNRELEASED; urgency=medium
-
-  * Added a new gen-orig-gz feature, so we can use that instead of xz which
-    produces unpredictable results.
-
- -- Thomas Goirand <zigo@debian.org>  Sun, 14 Jun 2015 10:57:08 +0200
-
 openstack-pkg-tools (27) unstable; urgency=medium
 
   * Added pkgos-alternative-bin to make it easy to handle alternatives as
     /usr/bin/python{2,3}-something.
+  * Added a new gen-orig-gz feature, so we can use that instead of xz which
+    produces unpredictable results.
+  * Removed overrides of dh_builddeb an default compression options (as xz is
+    now the default, and others pointed out -9 is a bad idea).
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 10 Jun 2015 15:13:42 +0200
 
