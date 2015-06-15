@@ -21,7 +21,7 @@ fi
 
 cleanup_old_build () {
 	echo "===> Cleaning-up old builds"
-	rm -rf ../*.orig.tar.xz ../build-area
+	rm -rf ../*.orig.tar.xz ../*.orig.tar.gz ../build-area
 }  
 
 # Finds the current version of the package
@@ -41,7 +41,18 @@ create_orig_tar () {
 		echo "Nothing special to do with Pristine tar: not generating orig file!"
 	else
 		if [ "${IS_NATIVE}" = "no" ] ; then
-			./debian/rules gen-orig-xz
+			COMPRESSION_TYPE=xz
+			if [ -r debian/gbp.conf ] ; then
+				COMPRESSION_IN_FILE=`cat debian/gbp.conf | grep compression | cut -d'=' -f2 | awk '{print $1}'`
+				if [ "${COMPRESSION_IN_FILE}" = "gz" ] ; then
+					COMPRESSION_TYPE=gz
+				fi
+			fi
+			if [ "${COMPRESSION_TYPE}" = "gz" ] ; then
+				./debian/rules gen-orig-gz
+			else
+				./debian/rules gen-orig-xz
+			fi
 		fi
 	fi
 }

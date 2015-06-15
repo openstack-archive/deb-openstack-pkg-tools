@@ -1,3 +1,9 @@
+openstack-pkg-tools (29) unstable; urgency=medium
+
+  * Builds an orig.tar.gz if debian/gbp.conf indicates gz and not xz.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jun 2015 10:31:56 +0200
+
 openstack-pkg-tools (28) unstable; urgency=medium
 
   * Removes override_dh_builddeb from .PHONY (which was causing .debs to not be
