@@ -1,3 +1,9 @@
+openstack-pkg-tools (30) unstable; urgency=medium
+
+  * Fixed pkgos-alternative-bin removing wrong python version of alternative.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jun 2015 15:08:48 +0000
+
 openstack-pkg-tools (29) unstable; urgency=medium
 
   * Builds an orig.tar.gz if debian/gbp.conf indicates gz and not xz.

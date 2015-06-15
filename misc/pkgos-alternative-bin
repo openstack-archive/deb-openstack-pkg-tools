@@ -48,9 +48,9 @@ while [ -n "${1}" ] ; do
 	echo "	update-alternatives --install /usr/bin/${BIN_UTIL_NAME} ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME} 300" >>debian/$PKG_PY2.postinst
 	echo "	update-alternatives --install /usr/bin/${BIN_UTIL_NAME} ${BIN_UTIL_NAME} /usr/bin/python3-${BIN_UTIL_NAME} 200" >>debian/$PKG_PY3.postinst
 	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY2.postrm
-	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY3.postrm
+	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python3-${BIN_UTIL_NAME}" >>debian/$PKG_PY3.postrm
 	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY2.prerm
-	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python2-${BIN_UTIL_NAME}" >>debian/$PKG_PY3.prerm
+	echo "	update-alternatives --remove ${BIN_UTIL_NAME} /usr/bin/python3-${BIN_UTIL_NAME}" >>debian/$PKG_PY3.prerm
 	RULES_ENTRY="${RULES_ENTRY}\n\tmv \$(CURDIR)/debian/${PKG_PY2}/usr/bin/${BIN_UTIL_NAME} \$(CURDIR)/debian/${PKG_PY2}/usr/bin/python2-${BIN_UTIL_NAME}"
 	RULES_ENTRY="${RULES_ENTRY}\n\tmv \$(CURDIR)/debian/${PKG_PY3}/usr/bin/${BIN_UTIL_NAME} \$(CURDIR)/debian/${PKG_PY3}/usr/bin/python3-${BIN_UTIL_NAME}"
 done
