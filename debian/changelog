@@ -1,3 +1,10 @@
+openstack-pkg-tools (28) unstable; urgency=medium
+
+  * Removes override_dh_builddeb from .PHONY (which was causing .debs to not be
+    created at all).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jun 2015 10:21:01 +0200
+
 openstack-pkg-tools (27) unstable; urgency=medium
 
   * Added pkgos-alternative-bin to make it easy to handle alternatives as

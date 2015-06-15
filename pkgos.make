@@ -130,4 +130,4 @@ override_dh_gencontrol:
 		dh_gencontrol -- -T$(CURDIR)/debian/debian_control_vars ; \
 	fi
 
-.PHONY: get-vcs-source get-orig-source override_dh_installinit override_dh_builddeb regen-manifest-patch call-for-po-trans display-po-stats versioninfo
+.PHONY: get-vcs-source get-orig-source override_dh_installinit regen-manifest-patch call-for-po-trans display-po-stats versioninfo
