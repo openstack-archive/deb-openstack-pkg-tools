@@ -94,7 +94,7 @@ gen-orig-gz:
 gen-orig-bz2:
 	git tag -v $(GIT_TAG) || true
 	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.bz2 ] ; then \
-		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(GIT_TAG) | gzip >../$(DEBPKGNAME)_$(VERSION).orig.tar.bz2 ; \
+		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(GIT_TAG) | bzip2 >../$(DEBPKGNAME)_$(VERSION).orig.tar.bz2 ; \
 	fi
 	[ ! -e ../build-area ] && mkdir ../build-area || true
 	[ ! -e ../build-area/$(DEBPKGNAME)_$(VERSION).orig.tar.bz2 ] && cp ../$(DEBPKGNAME)_$(VERSION).orig.tar.bz2 ../build-area
