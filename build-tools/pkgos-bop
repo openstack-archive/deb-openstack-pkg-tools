@@ -46,10 +46,14 @@ create_orig_tar () {
 				COMPRESSION_IN_FILE=`cat debian/gbp.conf | grep compression | cut -d'=' -f2 | awk '{print $1}'`
 				if [ "${COMPRESSION_IN_FILE}" = "gz" ] ; then
 					COMPRESSION_TYPE=gz
+				elif [ "${COMPRESSION_IN_FILE}" = "bzip2" ] ; then
+					COMPRESSION_TYPE=bzip2
 				fi
 			fi
 			if [ "${COMPRESSION_TYPE}" = "gz" ] ; then
 				./debian/rules gen-orig-gz
+			elif [ "${COMPRESSION_TYPE}" = "bzip2" ] ; then
+				./debian/rules gen-orig-bz2
 			else
 				./debian/rules gen-orig-xz
 			fi

@@ -1,3 +1,9 @@
+openstack-pkg-tools (31) unstable; urgency=medium
+
+  * Added bzip2 compression support for the orig.tar.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 16 Jun 2015 13:21:23 +0000
+
 openstack-pkg-tools (30) unstable; urgency=medium
 
   * Fixed pkgos-alternative-bin removing wrong python version of alternative.
