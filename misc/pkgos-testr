@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+PYTHON=${1}
+if [ -z "$PYTHON" ]; then
+    echo "ERROR: Missing python version argument"
+    echo "Usage: pkgos-testr <python-version> [<test-scope>]"
+    exit 1
+fi
+
+PY_MAJOR=$(echo $PYTHON | cut -d . -f 1)
+SCOPE=${2}
+
+TEMP_REZ=`mktemp -t`
+
+function finish {
+    rm -rf .testrepository
+    rm -f $TEMP_REZ
+}
+trap finish EXIT
+
+echo "===> Testing for python$PYTHON"
+rm -rf .testrepository
+testr init
+PYTHON=python$PYTHON PYTHONPATH=`pwd` testr run --subunit  $SCOPE | tee $TEMP_REZ | subunit2pyunit
+cat $TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats
+testr slowest
+echo "===> Testing with python$PYTHON complete."
