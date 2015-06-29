@@ -121,7 +121,12 @@ Section: python
 Priority: optional
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>
-Build-Depends: debhelper (>= 9), dh-python, python-setuptools, python-all (>= 2.6.6-3~), python3-setuptools, python3-all${SPHINX_BUILD_DEP}${OSTACK_PKG_T_CTRL}
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               python-setuptools,
+               python-all,
+               python3-setuptools,
+               python3-all${SPHINX_BUILD_DEP}${OSTACK_PKG_T_CTRL}
 Standards-Version: 3.9.6
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/${DEB_PKG_NAME}.git
 Vcs-Git: git://anonscm.debian.org/openstack/${DEB_PKG_NAME}.git
@@ -129,7 +134,6 @@ Homepage: ${HOMEPAGE}
 
 Package: ${DEB_PKG_NAME}
 Architecture: all
-Pre-Depends: dpkg (>= 1.15.6~)
 Depends: \${python:Depends}, \${misc:Depends}${SUGGEST_DOC}
 Description: ${SHORT_DESC} - Python 2.x
  ${LONG_DESC}
@@ -138,7 +142,6 @@ Description: ${SHORT_DESC} - Python 2.x
 
 Package: python3-${LOWER_PKG_NAME}
 Architecture: all
-Pre-Depends: dpkg (>= 1.15.6~)
 Depends: \${python3:Depends}, \${misc:Depends}${SUGGEST_DOC}
 Description: ${SHORT_DESC} - Python 3.x
  - REPLACE ME -
@@ -150,7 +153,6 @@ if [ -n "${DOC_FOLDER}" ] ; then
 	echo "Package: python-${LOWER_PKG_NAME}-doc
 Section: doc
 Architecture: all
-Pre-Depends: dpkg (>= 1.15.6~)
 Depends: \${misc:Depends}, \${sphinxdoc:Depends}
 Description: ${SHORT_DESC} - doc
  - REPLACE ME -
