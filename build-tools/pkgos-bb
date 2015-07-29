@@ -43,7 +43,7 @@ PKG_NAME=${1}
 
 # Double-guessing some stuffs
 if [ `whoami` = "jenkins" ] ; then
-        BUILD_ROOT=/var/lib/jenkins/jobs/openstack-pkg-tools/builds/${BUILD_NUMBER}
+        BUILD_ROOT=/var/lib/jenkins/backports/${BUILD_NUMBER}
 else
         BUILD_ROOT=~/src/os-bpo
 fi

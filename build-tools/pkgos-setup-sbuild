@@ -49,7 +49,7 @@ install_all_software () {
 		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
 		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
 		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools \
-		lintian lsb-release postfix
+		lintian lsb-release postfix gem2deb
 	if [ "${DEV_OR_JENKINS}" = "jenkins" ] ; then
 		${APT} jenkins jenkins-job-builder jenkins-cli
 	fi

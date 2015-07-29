@@ -560,6 +560,7 @@ pkgos_var_user_group () {
 	if [ ! -d /var/log/${VAR_UG_PKG_NAME} ] ; then
 		mkdir -p /var/log/${VAR_UG_PKG_NAME}
 	fi
+	usermod -G adm ${VAR_UG_PKG_NAME}
 	chown ${VAR_UG_PKG_NAME}:adm /var/log/${VAR_UG_PKG_NAME}
 	chmod 0750 /var/log/${VAR_UG_PKG_NAME}
 }
