@@ -1,3 +1,11 @@
+openstack-pkg-tools (33) experimental; urgency=medium
+
+  * Fixes package branches when building Jessie backports on Jenkins.
+  * Some fixes to build tools.
+
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 29 Jul 2015 23:31:43 +0200
+
 openstack-pkg-tools (32) unstable; urgency=medium
 
   * Really using bzip2 when compressing as bz2.
