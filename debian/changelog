@@ -1,8 +1,14 @@
+openstack-pkg-tools (34) experimental; urgency=medium
+
+  * Add possibility to set custom shell via pkgos_adduser
+    function
+
+-- Ivan Udovichenko <iudovichenko@mirantis.com>  Mon, 10 Aug 2015 12:15:08 +0300
+
 openstack-pkg-tools (33) experimental; urgency=medium
 
   * Fixes package branches when building Jessie backports on Jenkins.
   * Some fixes to build tools.
-
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 29 Jul 2015 23:31:43 +0200
 

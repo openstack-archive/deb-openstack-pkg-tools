@@ -524,7 +524,13 @@ pkgos_write_new_conf () {
 
 pkgos_adduser () {
 	local VAR_UG_PKG_NAME
+	local VAR_UG_SHELL
 	VAR_UG_PKG_NAME=${1}
+	VAR_UG_SHELL=${2}
+
+	if [ -z "${VAR_UG_SHELL}" ] ; then
+		VAR_UG_SHELL='/bin/bash'
+	fi
 
 	# Create user and groups if they don't exist
 	if ! getent group ${VAR_UG_PKG_NAME} > /dev/null 2>&1 ; then
@@ -536,7 +542,7 @@ pkgos_adduser () {
 			--no-create-home \
 			--quiet \
 			--disabled-password \
-			--shell /bin/bash \
+			--shell ${VAR_UG_SHELL} \
 			--group ${VAR_UG_PKG_NAME}
 	fi
 }
