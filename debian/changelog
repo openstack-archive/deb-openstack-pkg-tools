@@ -3,7 +3,7 @@ openstack-pkg-tools (34) experimental; urgency=medium
   * Add possibility to set custom shell via pkgos_adduser
     function
 
--- Ivan Udovichenko <iudovichenko@mirantis.com>  Mon, 10 Aug 2015 12:15:08 +0300
+ -- Ivan Udovichenko <iudovichenko@mirantis.com>  Mon, 10 Aug 2015 12:15:08 +0300
 
 openstack-pkg-tools (33) experimental; urgency=medium
 
