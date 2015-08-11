@@ -104,10 +104,11 @@ parse_and_print () {
 			i=`echo $i | cut -d'=' -f2`
 			VERS=""
 		else
-			VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
+			TRIM_VERS=`echo $i | sed -e 's/^[-a-zA-Z0-9._]*//'`
+			VERS=`echo $TRIM_VERS | sed -e 's/^[-a-zA-Z0-9._]*//' | tr ',|;' '\n' | sort | tr '\n' ',' | sed -e 's/,$//'`
 		fi
 		if [ -n "$VERS" ] ; then
-			PKG=`echo $i | sed -e "s/$VERS//" | sed -e s/python-//`
+			PKG=`echo $i | sed -e "s/${TRIM_VERS}//" | sed -e s/python-//`
 		else
 			PKG=`echo $i | sed -e s/python-//`
 		fi
