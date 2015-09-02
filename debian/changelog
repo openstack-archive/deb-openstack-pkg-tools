@@ -11,6 +11,7 @@ openstack-pkg-tools (35) UNRELEASED; urgency=medium
     launching accordingly.
   * Correctly detects the location of the conf.py file to properly detect the
     way to run sphinx-build.
+  * debpypi: respect the DEB_BUILD_OPTIONS=nodocs when creating debian/rules.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 02 Sep 2015 14:56:07 +0200
 

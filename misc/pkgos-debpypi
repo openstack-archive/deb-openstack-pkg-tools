@@ -222,9 +222,10 @@ export-dir = ../build-area/
 
 if [ -n "${DOC_FOLDER}" ] ; then
 	SPHINX_BUILD_RULES="override_dh_sphinxdoc:
+ifeq (,\$(findstring nodocs, \$(DEB_BUILD_OPTIONS)))
 	sphinx-build -b html ${DOC_FOLDER} debian/python-${LOWER_PKG_NAME}-doc/usr/share/doc/python-${LOWER_PKG_NAME}-doc/html
 	dh_sphinxdoc -O--buildsystem=python_distutils
-
+endif
 "
 else
 	SPHINX_BUILD_RULES=""
