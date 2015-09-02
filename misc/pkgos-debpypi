@@ -222,13 +222,41 @@ export-dir = ../build-area/
 
 if [ -n "${DOC_FOLDER}" ] ; then
 	SPHINX_BUILD_RULES="override_dh_sphinxdoc:
-	sphinx-build -b html doc debian/python-${LOWER_PKG_NAME}-doc/usr/share/doc/python-${LOWER_PKG_NAME}-doc/html
+	sphinx-build -b html ${DOC_FOLDER} debian/python-${LOWER_PKG_NAME}-doc/usr/share/doc/python-${LOWER_PKG_NAME}-doc/html
 	dh_sphinxdoc -O--buildsystem=python_distutils
 
 "
 else
 	SPHINX_BUILD_RULES=""
 fi
+
+if [ -e .testr.conf ] ; then
+	UNIT_TEST_RULES="override_dh_auto_test:
+ifeq (,\$(findstring nocheck, \$(DEB_BUILD_OPTIONS)))
+	@echo \"===> Running tests\"
+	set -e ; set -x ; for i in 2.7 \$(PYTHON3S) ; do \\
+		PYMAJOR=\`echo \$\$i | cut -d'.' -f1\` ; \\
+		echo \"===> Testing with python\$\$i (python\$\$PYMAJOR)\" ; \\
+		rm -rf .testrepository ; \\
+		testr-python\$\$PYMAJOR init ; \\
+		TEMP_REZ=\`mktemp -t\` ; \\
+		PYTHONPATH=\$(CURDIR) PYTHON=python\$\$i testr-python\$\$PYMAJOR run --subunit | tee \$\$TEMP_REZ | subunit2pyunit ; \\
+		cat \$\$TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats ; \\
+		rm -f \$\$TEMP_REZ ; \\
+		testr-python\$\$PYMAJOR slowest ; \\
+	done
+endif
+"
+else
+	UNIT_TEST_RULES="override_dh_auto_test:
+ifeq (,\$(findstring nocheck, \$(DEB_BUILD_OPTIONS)))
+	set -e ; for pyvers in \$(PYTHONS) \$(PYTHON3S); do \\
+		python\$\$pyvers setup.py test ; \\
+	done
+endif
+"
+fi
+
 echo "#!/usr/bin/make -f
 
 PYTHONS:=\$(shell pyversions -vr)
@@ -251,12 +279,7 @@ override_dh_install:
 	done
 	rm -rf \$(CURDIR)/debian/python*-${LOWER_PKG_NAME}/usr/lib/python*/dist-packages/*.pth
 
-override_dh_auto_test:
-ifeq (,\$(findstring nocheck, \$(DEB_BUILD_OPTIONS)))
-	set -e ; for pyvers in \$(PYTHONS) \$(PYTHON3S); do \\
-		python\$\$pyvers setup.py test ; \\
-	done
-endif
+${UNIT_TEST_RULES}
 
 ${SPHINX_BUILD_RULES}
 override_dh_clean:

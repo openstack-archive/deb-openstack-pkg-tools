@@ -1,11 +1,18 @@
-openstack-pkg-tools (34) experimental; urgency=medium
+openstack-pkg-tools (35) UNRELEASED; urgency=medium
 
+  [ Ivan Udovichenko ]
   * Add possibility to set custom shell via pkgos_adduser
     function.
   * Fix issues with not sorted versions in pkgos-parse-requirements
     utility.
 
- -- Ivan Udovichenko <iudovichenko@mirantis.com>  Mon, 10 Aug 2015 12:15:08 +0300
+  [ Thomas Goirand ]
+  * pkgos-debpypi now detects a .test.conf and writes debian/rules unit tests
+    launching accordingly.
+  * Correctly detects the location of the conf.py file to properly detect the
+    way to run sphinx-build.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 02 Sep 2015 14:56:07 +0200
 
 openstack-pkg-tools (33) experimental; urgency=medium
 
