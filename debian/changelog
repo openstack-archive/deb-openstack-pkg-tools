@@ -5,6 +5,8 @@ openstack-pkg-tools (35) UNRELEASED; urgency=medium
     function.
   * Fix issues with not sorted versions in pkgos-parse-requirements
     utility.
+  * Fix issue with detecting the first character in package name
+    in pkgos-debpypi script.
 
   [ Thomas Goirand ]
   * pkgos-debpypi now detects a .test.conf and writes debian/rules unit tests

@@ -40,7 +40,7 @@ SHORT_DESC=`xpath -e "//shortdesc/text()" ${PKG_NAME}.xml 2> /dev/null`
 LONG_DESC=`xpath -e "//description/text()" ${PKG_NAME}.xml 2> /dev/null`
 UP_MAINT_NAME=`xpath -e "//maintainer/foaf:Person/foaf:name/text()" ${PKG_NAME}.xml 2> /dev/null`
 HOMEPAGE=`xpath -e "//homepage/@rdf:resource" ${PKG_NAME}.xml 2> /dev/null | cut -d= -f2 | sed 's#"##g'`
-FIRST_LETTER=`echo ${PKG_NAME} | awk '{print substr($0,0,1)}'`
+FIRST_LETTER=`echo ${PKG_NAME} | awk '{print substr($0,1,1)}'`
 if [ -e ${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.xz ] ; then
 	ORIG=${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.xz
 else
