@@ -1,4 +1,4 @@
-openstack-pkg-tools (35) UNRELEASED; urgency=medium
+openstack-pkg-tools (34) experimental; urgency=medium
 
   [ Ivan Udovichenko ]
   * Add possibility to set custom shell via pkgos_adduser
