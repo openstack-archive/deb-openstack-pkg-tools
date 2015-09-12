@@ -118,11 +118,17 @@ pkgos_inifile () {
 		# This is a section block: [DEFAULT]
 		if echo ${INIFILE_LINE} | grep -q '^[ \t]*\[.*\][ \t]*$' ; then
 			if [ ! "${INIFILE_SEARCH_SECTION}" = "NO_SECTION" ] ; then
-				INIFILE_SECTION=`echo ${INIFILE_LINE} | sed -e 's/\[//' | sed -e 's/\]//'`
+				INIFILE_SECTION=`echo ${INIFILE_LINE} | sed -e 's/\[//' -e 's/\]//'`
 				#echo "===> $INIFILE_SECTION"
 			fi
+			continue
+		fi
+		# If we aren't in the section we're searching for, let's end things here for this line
+		if ! [ "${INIFILE_SECTION}" = "${INIFILE_SEARCH_SECTION}" ] ; then
+			continue
+		fi
 		# This is a directive: auth_host = 127.0.0.1
-		elif echo ${INIFILE_LINE} | grep -q '^[;#]*[ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
+		if echo ${INIFILE_LINE} | grep -q '^[;#]*[ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ; then
 			# This is a commented out directive, let's remove the comment
 			# if there's no such active directive in the file
 			if grep -q '^[#;][ \t]*[\._\/a-zA-Z0-9]*[ \t]*[=\:][ \t]*' ${INIFILE_MYCONFIG} ; then
@@ -483,7 +489,7 @@ pkgos_write_admin_creds () {
 	db_get ${WRITE_CRED_PKG_NAME}/auth-host
 	WRITE_CRED_AUTH_HOST=${RET}
 	if grep -q auth_host ${WRITE_CRED_CONF_FNAME} ; then
-		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} ${RET}
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_host ${RET}
 	else
 		# This is needed for l3_agent.ini
 		if grep -q auth_url ${WRITE_CRED_CONF_FNAME} ; then
