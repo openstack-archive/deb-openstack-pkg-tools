@@ -1,3 +1,9 @@
+openstack-pkg-tools (35) UNRELEASED; urgency=medium
+
+  * Split the package list configuration into separate files from pkgos.conf.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 17 Sep 2015 14:24:29 +0200
+
 openstack-pkg-tools (34) experimental; urgency=medium
 
   [ Ivan Udovichenko ]

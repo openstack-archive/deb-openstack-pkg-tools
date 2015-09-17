@@ -1,0 +1,17 @@
+bandit
+python-autobahn
+python-cliff
+python-concurrent.futures
+python-django-openstack-auth
+python-fixtures
+python-httpretty
+python-jsonschema
+python-oslo.vmware
+python-pyghmi
+python-pykmip
+python-pysaml2
+python-requests-mock
+python-rtslib-fb
+python-scciclient
+python-testtools
+subunit
