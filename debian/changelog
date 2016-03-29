@@ -1,6 +1,71 @@
-openstack-pkg-tools (35) UNRELEASED; urgency=medium
+openstack-pkg-tools (40) experimental; urgency=medium
+
+  [ Thomas Goirand ]
+  * Add to systemd service file generation the handling of Before=, through
+    parsing of sysv-rc's X-Start-Before: field.
+  * Add needed set -x and set -e when generating startup scripts.
+  * pkgos-bpo-jenkins: parses debian/gbp.conf branch names to do git checkout
+    of the correct branches before building a pristine-tar package.
+  * Standards-Version: 3.9.7 (no change).
+  * Added Ondřej Nový as uploader.
+  * Added registering of endpoint using project-name, admin-name and password
+    to Keystone, instead of the admin auth token.
+
+  [ Ondřej Nový ]
+  * Add a NO_OPENSTACK_CONFIG_FILE_DAEMON_ARG option.
+  * Optionally run autopkgtest when building package.
+  * Alias git-buildpackage on unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 13 Mar 2016 18:17:11 +0000
+
+openstack-pkg-tools (39) experimental; urgency=medium
+
+  [ Ondřej Nový ]
+  * Don't overwrite current groups, just add user to group adm.
+  * Fix user shell when upgrading package.
+
+  [ Thomas Goirand ]
+  * Added the possibility to override the default Type=simple in systemd
+    .service files.
+  * VCS URLs using HTTPs.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 07 Feb 2016 16:14:59 +0800
+
+openstack-pkg-tools (38) experimental; urgency=medium
+
+  [ Thomas Goirand ]
+  * Switch to Mitaka in pkgos.conf.
+  * Added server-packages list.
+  * Added option to build from trunk.
+  * Now setting-up sbuild using overlay, not tarballs.
+  * Added new pkgos-fix-config-default utility.
+  * Updated package list for Mitaka in /etc/pkgos/package-list.
+
+  [ Ondřej Nový ]
+  * Sanity checks in init-template generator.
+  * Make pkgos-gen-upstart-job more compatible with pkgos-gen-systemd-unit.
+  * Fixed typo SYSTEM_USER -> SYSTEM_GROUP in init-template.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 24 Nov 2015 13:41:15 +0100
+
+openstack-pkg-tools (37) unstable; urgency=medium
+
+  * Using Keystone API v3 to register endpoints.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 02 Nov 2015 14:12:40 +0000
+
+openstack-pkg-tools (36) unstable; urgency=medium
+
+  * Uploading to unstable.
+  * Now using mysql+pymysql for the mysql DSN backend (and correcting old
+    mysql:// DSN to use that).
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 13 Oct 2015 14:50:54 +0200
+
+openstack-pkg-tools (35) experimental; urgency=medium
 
   * Split the package list configuration into separate files from pkgos.conf.
+  * Now using openstackclient instead of keystoneclient to configure endpoints.
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 17 Sep 2015 14:24:29 +0200
 

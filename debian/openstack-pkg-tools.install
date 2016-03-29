@@ -1,10 +1,10 @@
-pkgos.make				/usr/share/openstack-pkg-tools
-pkgos_func				/usr/share/openstack-pkg-tools
-pkgos_insert_include			/usr/share/openstack-pkg-tools
+build-tools/*				/usr/bin
+etc/pkgos/*				/etc/pkgos
 init-template/init-script-template	/usr/share/openstack-pkg-tools
 init-template/pkgos-gen-systemd-unit	/usr/bin
 init-template/pkgos-gen-upstart-job	/usr/bin
 misc/openstack.profile			/usr/share/lintian/profiles/debian
 misc/pkgos*				/usr/bin
-build-tools/*				/usr/bin
-etc/pkgos/*				/etc/pkgos
+pkgos.make				/usr/share/openstack-pkg-tools
+pkgos_func				/usr/share/openstack-pkg-tools
+pkgos_insert_include			/usr/share/openstack-pkg-tools

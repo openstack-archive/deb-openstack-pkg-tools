@@ -12,31 +12,31 @@ DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f
 
 gen-init-configurations:
 	# Create the init scripts and systemd unit files from the template
-	for i in `ls -1 debian/*.init.in` ; do \
+	set -e ; set -x ; for i in `ls -1 debian/*.init.in` ; do \
 		MYINIT=`echo $$i | sed s/.init.in//` ; \
 		cp $$i $$MYINIT.init ; \
 		cat /usr/share/openstack-pkg-tools/init-script-template >>$$MYINIT.init ; \
 		pkgos-gen-systemd-unit $$i ; \
 	done
 	# If there's an upstart.in file, use that one instead of the generated one
-	for i in `ls -1 debian/*.upstart.in` ; do \
+	set -e ; set -x ; for i in `ls -1 debian/*.upstart.in` ; do \
 		MYPKG=`echo $$i | sed s/.upstart.in//` ; \
 		cp $$MYPKG.upstart.in $$MYPKG.upstart ; \
 	done
 	# Generate the upstart job if there's no already existing .upstart.in
-	for i in `ls debian/*.init.in` ; do \
+	set -e ; set -x ; for i in `ls debian/*.init.in` ; do \
 		MYINIT=`echo $$i | sed s/.init.in/.upstart.in/` ; \
 		if ! [ -e $$MYINIT ] ; then \
 			pkgos-gen-upstart-job $$i ; \
 		fi \
 	done
 	# If there's a service.in file, use that one instead of the generated one
-	for i in `ls -1 debian/*.service.in`; do \
+	set -e ; set -x ; for i in `ls -1 debian/*.service.in`; do \
 		MYPKG=`echo $$i | sed s/.service.in//` ; \
 		cp $$MYPKG.service.in $$MYPKG.service ; \
 	done
 	# Generate the systemd unit if there's no already existing .service.in
-	for i in `ls debian/*.init.in` ; do \
+	set -e ; set -x ; for i in `ls debian/*.init.in` ; do \
 		MYINIT=`echo $$i | sed s/.init.in/.service.in/` ; \
 		if ! [ -e $$MYINIT ] ; then \
 			pkgos-gen-systemd-unit $$i ; \

@@ -72,6 +72,7 @@ python-django-pyscss
 python-dogpile.cache
 python-dogpile.core
 python-extras
+python-eventlet
 python-falcon
 python-fixtures
 python-fuelclient
@@ -208,6 +209,7 @@ stevedore
 subunit
 swift
 swift-account-stats
+swift-bench
 swift-plugin-s3
 tasksel
 tempest

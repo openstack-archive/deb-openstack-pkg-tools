@@ -1,0 +1,14 @@
+#!/bin/sh
+# -*- mode: shell-script -*-
+
+set -e
+
+. /usr/share/openstack-pkg-tools/pkgos_func
+
+# $1 = config file path (example: /etc/nova/nova.conf)
+# $2 = .ini file section (example: DEFAULT)
+# $3 = directive name (example: sql_connection)
+# $4 = only present in "set" mode: new value to replace in the .ini file
+
+PKGOS_VERBOSE=yes
+pkgos_inifile set $@

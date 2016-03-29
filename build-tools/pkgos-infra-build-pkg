@@ -1,0 +1,101 @@
+#!/bin/sh
+
+set -e
+set -x
+
+detect_distro () {
+    DISTRO_VENDOR=$(lsb_release --id -s | awk '{print tolower($0)}')
+    DISTRO_NAME=$(lsb_release -c -s)
+}
+
+
+# Get some version information out of the debian/changelog last entry
+get_deb_version() {
+    PKG_NAME=$(dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2)
+    DEB_VERS=$(dpkg-parsechangelog | grep -E "^Version: " | cut -d" " -f2)
+    NO_EPOC=$(echo ${DEB_VERS} | cut -d":" -f2)
+    if echo ${DEB_VERS} | grep -q ':' ; then
+        EPOC=$(echo ${DEB_VERS} | cut -d":" -f1)
+    fi
+    UPSTREAM_VERS=$(echo ${NO_EPOC} | cut -d"-" -f1)
+    if [ "${DEB_VERS}" = "${UPSTREAM_VERS}" ] ; then IS_NATIVE="yes" ; else IS_NATIVE="no" ; fi
+    ORIG=${PKG_NAME}_${UPSTREAM_VERS}.orig.tar.xz
+    CHANGE=${PKG_NAME}_${NO_EPOC}_${ARCH}.changes
+    PKG_NAME_FIRST_CHAR=$(echo ${PKG_NAME} | awk '{print substr($0,1,1)}')
+}
+
+calc_bpo_version () {
+    case ${DISTRO_NAME} in
+    jessie)
+        BPO_DISTRO_NUM="~bpo8+1"
+    ;;
+    stretch)
+        BPO_DISTRO_NUM="~bpo9+1"
+    ;;
+    buster)
+        BPO_DISTRO_NUM="~bpo10+1"
+    ;;
+    sid)
+        BPO_DISTRO_NUM=""
+    ;;
+    trusty)
+        BPO_DISTRO_NUM="~bpo14.04+1"
+    ;;
+    xenial)
+        BPO_DISTRO_NUM="~bpo16.04+1"
+    ;;
+    *)
+        echo "Distribution not supported!"
+        echo "Falling back to no changelog bpo version tag"
+        BPO_DISTRO_NUM=""
+    ;;
+    esac
+}
+
+create_orig_tarball () {
+    if grep pristine-tar debian/gbp.conf | grep -q -i true ; then
+        echo "Nothing special to do with Pristine tar: not generating orig file!"
+    else
+        if [ "${IS_NATIVE}" = "no" ] ; then
+            GENORIG_DEBRULES_TARGET=gen-orig-xz
+            if [ -r debian/gbp.conf ] ; then
+                COMPRESSION_IN_FILE=$(cat debian/gbp.conf | grep compression | cut -d'=' -f2 | awk '{print $1}')
+                if [ "${COMPRESSION_IN_FILE}" = "gz" ] ; then
+                    GENORIG_DEBRULES_TARGET=gen-orig-gz
+                elif [ "${COMPRESSION_IN_FILE}" = "bzip2" ] ; then
+                    GENORIG_DEBRULES_TARGET=gen-orig-bz2
+                fi
+            fi
+            ./debian/rules ${GENORIG_DEBRULES_TARGET}
+        fi
+    fi
+}
+
+build_backport_package () {
+    echo "===> Building using git-buildpackage"
+    # Edit debian/changelog to show we're building a backport
+    LAST_GIT_COMMIT=$(git log | head -n 1 | awk '{print $2}')
+    dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
+    git commit debian/changelog -m "Backport rebuilt by Jenkins in OpenStack infra."
+
+    # Build the package with gbp buildpackage
+    if ! gbp buildpackage ; then
+        git reset --hard ${LAST_GIT_COMMIT}
+        echo "Error building the package with gbp buildpackage: exiting."
+        exit 1
+    else
+        git reset --hard ${LAST_GIT_COMMIT}
+    fi
+}
+
+lintian_test_the_package () {
+    echo "===> Starting Lintian check"
+    lintian -I -E --pedantic ../build-area/*.changes
+}
+
+detect_distro
+calc_bpo_version
+get_deb_version
+create_orig_tarball
+build_backport_package
+lintian_test_the_package

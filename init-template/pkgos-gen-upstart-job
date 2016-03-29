@@ -1,10 +1,28 @@
 #!/bin/sh
 
+if [ $# -ne 1 ] ; then
+    echo "Usage: $0 <init_template>"
+    exit 1
+fi
+
 INIT_TEMPLATE=${1}
 UPSTART_FILE=`echo ${INIT_TEMPLATE} | sed 's/.init.in/.upstart/'`
 
 # Get the variables defined in the init template
 . ${INIT_TEMPLATE}
+
+if [ -z "${NAME}" ] ; then
+    echo "Variable NAME is not set!"
+    exit 1
+fi
+if [ -z "${PROJECT_NAME}" ] ; then
+    echo "Variable PROJECT_NAME is not set!"
+    exit 1
+fi
+if [ -z "${DESC}" ] ; then
+    echo "Variable DESC is not set!"
+    exit 1
+fi
 
 ## Find out what should go in After=
 #SHOULD_START=`cat ${INIT_TEMPLATE} | grep "# Should-Start:" | sed 's/# Should-Start://'`
@@ -59,13 +77,18 @@ end script
 script
 	[ -x \"${DAEMON}\" ] || exit 0
 	DAEMON_ARGS=\"${DAEMON_ARGS}\"
+	CONFIG_FILE=\"${CONFIG_FILE}\"
+	USE_SYSLOG=\"${USE_SYSLOG}\"
+	USE_LOGFILE=\"${USE_LOGFILE}\"
+	NO_OPENSTACK_CONFIG_FILE_DAEMON_ARG=\"${NO_OPENSTACK_CONFIG_FILE_DAEMON_ARG}\"
 	[ -r /etc/default/openstack ] && . /etc/default/openstack
 	[ -r /etc/default/\$UPSTART_JOB ] && . /etc/default/\$UPSTART_JOB
 	[ \"x\$USE_SYSLOG\" = \"xyes\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --use-syslog\"
 	[ \"x\$USE_LOGFILE\" != \"xno\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --log-file=${LOGFILE}\"
+	[ -z \"\$NO_OPENSTACK_CONFIG_FILE_DAEMON_ARG\" ] && DAEMON_ARGS=\"\$DAEMON_ARGS --config-file=\$CONFIG_FILE\"
 
 	exec start-stop-daemon --start --chdir /var/lib/${PROJECT_NAME} \\
 		${STARTDAEMON_CHUID} --make-pidfile --pidfile ${PIDFILE} \\
-		--exec ${DAEMON} -- --config-file=${CONFIG_FILE} \${DAEMON_ARGS}
+		--exec ${DAEMON} -- \${DAEMON_ARGS}
 end script
 " >${UPSTART_FILE}

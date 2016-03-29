@@ -45,11 +45,24 @@ is_experi () {
 	done
 }
 
+is_server () {
+	ISSERVER="no"
+	for i in ${SERVERS} ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISSERVER="yes"
+			return
+		fi
+	done
+}
+
 # Get some version information out of the debian/changelog last entry
 get_deb_version() {
 	PKG_NAME=`dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2`
 	DEB_VERS=`dpkg-parsechangelog | grep -E "^Version: " | cut -d" " -f2`
 	NO_EPOC=`echo ${DEB_VERS} | cut -d":" -f2`
+	if echo ${DEB_VERS} | grep -q ':' ; then
+		EPOC=`echo ${DEB_VERS} | cut -d":" -f1`
+	fi
 	UPSTREAM_VERS=`echo ${NO_EPOC} | cut -d"-" -f1`
 	if [ "${DEB_VERS}" = "${UPSTREAM_VERS}" ] ; then IS_NATIVE="yes" ; else IS_NATIVE="no" ; fi
 	ORIG=${PKG_NAME}_${UPSTREAM_VERS}.orig.tar.xz
@@ -86,14 +99,18 @@ if [ "${PRIS}" = "pristine-tar" ] ; then
 	fi
 fi
 if [ "${PRIS}" = "pristine-tar" ] ; then
+	# Guess the upstream-branch and debian-branch reading gbp.conf
+	PRIS_UPSTREAM_BRANCH=$(grep upstream-branch debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
+	PRIS_DEBIAN_BRANCH=$(grep debian-branch debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
+
 	# If it's a pristine-tar package, checkout the pristine-tar and upstream-unstable branches
 	git checkout -b pristine-tar origin/pristine-tar
-	git checkout -b upstream-unstable origin/upstream-unstable
+	git checkout -b ${PRIS_UPSTREAM_BRANCH} origin/${PRIS_UPSTREAM_BRANCH}
 	is_experi
 	if [ "${ISEXPERI}" = "yes" ] ; then
 		git checkout -b debian-experimental origin/debian-experimental
 	else
-		git checkout debian-unstable
+		git checkout ${PRIS_DEBIAN_BRANCH}
 	fi
 	get_deb_version
 else
@@ -102,6 +119,37 @@ else
 		# If it's a core package, listed in OSTACK_PKGS in /etc/pkgos/pkgos.conf
 		# then we use debian/juno, debian/kilo, etc. as packaging branch.
 		git checkout -b debian/${TARGET_OPENSTACK_REL} origin/debian/${TARGET_OPENSTACK_REL} || true
+
+		if [ "${BUILD_FROM_TRUNK}" = "yes" ] ; then
+			is_server
+			if [ "${ISSERVER}" = "yes" ] ; then
+				# Get the master branch
+				./debian/rules get-master-branch
+				git checkout master
+
+				# Calculate a new tag
+				GIT_SHA256_FULL=`git log | head -n1 | cut -d' ' -f2`
+				GIT_SHA256=`echo ${GIT_SHA256_FULL} | awk '{print substr($0,0,10)}'`
+				DATETIME=`date +%F | sed s/-/./g`.`date +%T | sed s/:/./g`
+				UPSTREAM_NEW_TAG=`echo ${UPSTREAM_VERS} | sed s/~/_/`+git${DATETIME}.${GIT_SHA256}
+				UPSTREAM_NEW_VERSION=${UPSTREAM_VERS}+git${DATETIME}.${GIT_SHA256}
+
+				# Tag it
+				git tag ${UPSTREAM_NEW_TAG}
+
+				# Get back to our original Debian packaging branch, merge the tag
+				git checkout -b debian/${TARGET_OPENSTACK_REL}
+				git merge -X theirs ${UPSTREAM_NEW_TAG}
+
+				# and fix the debian/changelog with a new entry
+				if [ -n "${EPOC}" ] ; then
+					NEW_DEBVERSION="${EPOC}:"
+				fi
+				NEW_DEBVERSION=${NEW_DEBVERSION}${UPSTREAM_NEW_VERSION}-1
+				dch --newversion ${NEW_DEBVERSION} -b --allow-lower-version --distribution unstable -m "New upstream release based on commit ${GIT_SHA256_FULL}."
+				git commit debian/changelog -m "New upstream release based on commit ${GIT_SHA256_FULL}."
+			fi
+		fi
 	else
 		# If it's listed as EXPERIMENTAL_BRANCH in /etc/pkgos/pkgos.conf, then we
 		# use debian/experimental branch.

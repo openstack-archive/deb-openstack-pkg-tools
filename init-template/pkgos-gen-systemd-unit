@@ -1,10 +1,28 @@
 #!/bin/sh
 
+if [ $# -ne 1 ] ; then
+    echo "Usage: $0 <init_template>"
+    exit 1
+fi
+
 INIT_TEMPLATE=${1}
 SERVICE_FILE=`echo ${INIT_TEMPLATE} | sed 's/.init.in/.service/'`
 
 # Get the variables defined in the init template
 . ${INIT_TEMPLATE}
+
+if [ -z "${NAME}" ] ; then
+    echo "Variable NAME is not set!"
+    exit 1
+fi
+if [ -z "${PROJECT_NAME}" ] ; then
+    echo "Variable PROJECT_NAME is not set!"
+    exit 1
+fi
+if [ -z "${DESC}" ] ; then
+    echo "Variable DESC is not set!"
+    exit 1
+fi
 
 if [ -z "${SCRIPTNAME}" ] ; then
 	SCRIPTNAME=/etc/init.d/${NAME}
@@ -15,9 +33,13 @@ fi
 if [ -z "${SYSTEM_GROUP}" ] ; then
 	SYSTEM_GROUP=${PROJECT_NAME}
 fi
+if [ -z "${SYSTEMD_TYPE}" ] ; then
+	SYSTEMD_TYPE=simple
+fi
 
 # Find out what should go in After=
 SHOULD_START=`cat ${INIT_TEMPLATE} | grep "# Should-Start:" | sed 's/# Should-Start://'`
+X_START_BEFORE=`cat ${INIT_TEMPLATE} | grep "# X-Start-Before:" | sed 's/# X-Start-Before://'`
 
 if [ -n "${SHOULD_START}" ] ; then
 	AFTER="After="
@@ -26,19 +48,34 @@ if [ -n "${SHOULD_START}" ] ; then
 	done
 fi
 
+if [ -n "${X_START_BEFORE}" ] ; then
+	BEFORE="Before="
+	for i in ${X_START_BEFORE} ; do
+		BEFORE="${BEFORE}${i}.service "
+	done
+fi
+
+if [ "${SYSTEMD_TYPE}" = "oneshot" ] ; then
+	SYSTEMD_RESTART="Restart=no"
+else
+	SYSTEMD_RESTART="Restart=on-failure"
+fi
+
 echo "[Unit]
 Description=${DESC}
 $AFTER
+$BEFORE
 
 [Service]
 User=${SYSTEM_USER}
 Group=${SYSTEM_GROUP}
+Type=${SYSTEMD_TYPE}
 WorkingDirectory=/var/lib/${PROJECT_NAME}
 PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
 ExecStartPre=/bin/chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
 ExecStart=${SCRIPTNAME} systemd-start
-Restart=on-failure
+$SYSTEMD_RESTART
 LimitNOFILE=65535
 
 [Install]

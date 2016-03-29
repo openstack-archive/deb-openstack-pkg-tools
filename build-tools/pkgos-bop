@@ -10,6 +10,15 @@ else
 	. /etc/pkgos/pkgos.conf
 fi
 
+command_exists () {
+	type "$1" >/dev/null 2>&1
+}
+
+# Alias git-buildpackage
+if ! command_exists git-buildpackage ; then
+	alias git-buildpackage="gbp buildpackage"
+fi
+
 # Some quick calculation
 BPO_DISTRO_NUM=~bpo${TARGET_DISTRO_NUM}+1
 if [ `uname -m` = "x86_64" ] ; then
@@ -66,17 +75,40 @@ bop_it () {
 	LAST_GIT_COMMIT=`git log | head -n 1 | awk '{print $2}'`
 	dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Rebuilt by bop."
 	git commit debian/changelog -m "Rebuilt by bop."
-	if ! git-buildpackage ; then
-		git reset --hard ${LAST_GIT_COMMIT}
-		echo "There was an error when bop called git-buildpackage: exiting."
-		exit 1
+	if [ "${PKGOS_RUN_UNIT_TESTS_AT_BUILD}" = "no" ] ; then
+		if ! DEB_BUILD_OPTIONS=nocheck git-buildpackage ; then
+			git reset --hard ${LAST_GIT_COMMIT}
+			echo "There was an error when bop called git-buildpackage: exiting."
+			exit 1
+		else
+			git reset --hard ${LAST_GIT_COMMIT}
+		fi
 	else
-		git reset --hard ${LAST_GIT_COMMIT}
+		if ! git-buildpackage ; then
+			git reset --hard ${LAST_GIT_COMMIT}
+			echo "There was an error when bop called git-buildpackage: exiting."
+			exit 1
+		else
+			git reset --hard ${LAST_GIT_COMMIT}
+		fi
 	fi
 }
 
 test_the_package () {
+	echo "===> Lintian"
 	lintian -I -E --pedantic --profile debian/openstack ../build-area/*.changes
+
+	if [ x"$RUN_AUTOPKGTEST" = x"yes" ] ; then
+		echo "===> Autopkgtest"
+		set +e
+		adt-run ../build-area/*.changes --- schroot "$AUTOPKGTEST_SCHROOT"
+		RET=$?
+		if [ $RET != 0 ] && [ $RET != 8 ] ; then
+			echo "adt-run failed: $RET"
+			exit $RET
+		fi
+		set -e
+	fi
 }
 
 copy_to_ftparchive () {

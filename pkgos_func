@@ -284,6 +284,9 @@ pkgos_dbc_read_conf () {
 		PARSED_DB_TYPE=${CONN_STRING%%:*}
 		# If we have an undefined SQL type, we go back to a more sane default (eg: SQLite)
 		case "${PARSED_DB_TYPE}" in
+			"mysql+pymysql")
+				PARSED_DB_TYPE=mysql
+				;;
 			sqlite|mysql|pgsql)
 				;;
 			postgresql*)
@@ -417,7 +420,7 @@ pkgos_dbc_postinst () {
 					if [ -n "$dbc_dbport" ] ; then
 						dbport=:$dbc_dbport
 					fi
-					SQL_CONNECTION="mysql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
+					SQL_CONNECTION="mysql+pymysql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
 					# Set the DB as UTF8
 					Q="ALTER DATABASE ${dbc_dbname} CHARACTER SET utf8 COLLATE utf8_unicode_ci"
 					pkgos_mysql_query ${dbc_dbuser} ${dbc_dbpass} ${dbc_dbserver:-localhost} "${dbport}" ${dbc_dbname} "${Q}"
@@ -550,6 +553,10 @@ pkgos_adduser () {
 			--disabled-password \
 			--shell ${VAR_UG_SHELL} \
 			--group ${VAR_UG_PKG_NAME}
+	else
+		usermod \
+			--shell ${VAR_UG_SHELL} \
+			${VAR_UG_PKG_NAME} >/dev/null 2>&1
 	fi
 }
 
@@ -572,7 +579,7 @@ pkgos_var_user_group () {
 	if [ ! -d /var/log/${VAR_UG_PKG_NAME} ] ; then
 		mkdir -p /var/log/${VAR_UG_PKG_NAME}
 	fi
-	usermod -G adm ${VAR_UG_PKG_NAME}
+	usermod -a -G adm ${VAR_UG_PKG_NAME}
 	chown ${VAR_UG_PKG_NAME}:adm /var/log/${VAR_UG_PKG_NAME}
 	chmod 0750 /var/log/${VAR_UG_PKG_NAME}
 }
@@ -606,7 +613,17 @@ pkgos_register_endpoint_config () {
 			db_set ${REG_ENDP_PKG_NAME}/keystone-ip 127.0.0.1
 		fi
 		db_input medium ${REG_ENDP_PKG_NAME}/keystone-ip || true
-		db_input high ${REG_ENDP_PKG_NAME}/keystone-auth-token || true
+
+		# Attempt to use keystone project, admin-name and passwrod if there's
+		# no ${REG_ENDP_PKG_NAME}/keystone-auth-token, so that we stay backward
+		# compatible with older version of openstack-pkg-tools.
+		if db_get ${REG_ENDP_PKG_NAME}/keystone-auth-token ; then
+			db_input high ${REG_ENDP_PKG_NAME}/keystone-auth-token || true
+		else
+			db_input low ${REG_ENDP_PKG_NAME}/keystone-project-name || true
+			db_input low ${REG_ENDP_PKG_NAME}/keystone-admin-name || true
+			db_input high ${REG_ENDP_PKG_NAME}/keystone-admin-password || true
+		fi
 
 		db_get ${REG_ENDP_PKG_NAME}/endpoint-ip || true
 		if [ -z "${RET}" ] ; then
@@ -640,24 +657,71 @@ pkgos_register_endpoint_postinst () {
 	if [ "${RET}" = "true" ] ; then
 		db_get ${PKG_NAME}/keystone-ip
 		KEYSTONE_ENDPOINT_IP=`echo ${RET} | egrep '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
-		db_get ${PKG_NAME}/keystone-auth-token
-		AUTH_TOKEN=${RET}
 		db_get ${PKG_NAME}/endpoint-ip
 		PKG_ENDPOINT_IP=`echo ${RET} | egrep '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
 		db_get ${PKG_NAME}/region-name
 		REGION_NAME=${RET}
 
-		if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${AUTH_TOKEN}" ] ; then
-			echo "Registering service and endpoints for ${SERVICE_NAME} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
-			PKG_SERVICE_ID=$(pkgos_get_id keystone --os-token ${AUTH_TOKEN} --os-endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ service-create \
-				--name=${SERVICE_NAME} --type=${SERVICE_TYPE} --description="${SERVICE_DESC}")
-			PKG_ENDPOINT_ID=$(pkgos_get_id keystone --os-token ${AUTH_TOKEN} --os-endpoint http://${KEYSTONE_ENDPOINT_IP}:35357/v2.0/ endpoint-create \
-				--region "${REGION_NAME}" --service_id=${PKG_SERVICE_ID} \
-				--publicurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
-				--internalurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL} \
-				--adminurl=http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL})
+		if db_get ${PKG_NAME}/keystone-auth-token ; then
+			AUTH_TOKEN=${RET}
+			if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${AUTH_TOKEN}" ] ; then
+				echo "Registering service and endpoints for ${SERVICE_NAME} with type ${SERVICE_TYPE} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
+				NUM_LINES=$(openstack --os-token ${AUTH_TOKEN} --os-url=http://${KEYSTONE_ENDPOINT_IP}:35357/v3/ --os-domain-name default --os-identity-api-version=3 service list --format=csv | q -d , -H 'SELECT ID FROM - WHERE `Type`="'${SERVICE_TYPE}'"' | wc -l)
+				if [ "${NUM_LINES}" = "0" ] ; then
+					openstack --os-token ${AUTH_TOKEN} --os-url=http://${KEYSTONE_ENDPOINT_IP}:35357/v3/ --os-domain-name default --os-identity-api-version=3 service create \
+						--name=${SERVICE_NAME} --description="${SERVICE_DESC}" ${SERVICE_TYPE}
+
+					openstack --os-token ${AUTH_TOKEN} --os-url=http://${KEYSTONE_ENDPOINT_IP}:35357/v3/ --os-domain-name default --os-identity-api-version=3 endpoint create \
+						--region "${REGION_NAME}" \
+						${SERVICE_NAME} public http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+
+					openstack --os-token ${AUTH_TOKEN} --os-url=http://${KEYSTONE_ENDPOINT_IP}:35357/v3/ --os-domain-name default --os-identity-api-version=3 endpoint create \
+						--region "${REGION_NAME}" \
+						${SERVICE_NAME} internal http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+
+					openstack --os-token ${AUTH_TOKEN} --os-url=http://${KEYSTONE_ENDPOINT_IP}:35357/v3/ --os-domain-name default --os-identity-api-version=3 endpoint create \
+						--region "${REGION_NAME}" \
+						${SERVICE_NAME} admin http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+				else
+					echo "Service already registered: skipping service endpoint creation. Will skip service endpoint creation."
+				fi
+			else
+				echo "Problem in endpoint parameter (IPs or otherwise)."
+			fi
 		else
-			echo "Problem in endpoint parameter (IPs or otherwise)."
+			db_get ${PKG_NAME}/keystone-project-name
+			KEYSTONE_PROJECT_NAME=${RET}
+			db_get ${PKG_NAME}/keystone-admin-name
+			KEYSTONE_ADMIN_NAME=${RET}
+			db_get ${PKG_NAME}/keystone-admin-password
+			KEYSTONE_ADMIN_PASSWORD=${RET}
+
+			if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${KEYSTONE_PROJECT_NAME}" ] && [ -n "${KEYSTONE_ADMIN_NAME}" ]  && [ -n "${KEYSTONE_ADMIN_PASSWORD}" ]; then
+				echo "Registering service and endpoints for ${SERVICE_NAME} with type ${SERVICE_TYPE} at http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
+				export OS_PROJECT_DOMAIN_ID=default
+				export OS_USER_DOMAIN_ID=default
+				export OS_TENANT_NAME=${KEYSTONE_PROJECT_NAME}
+				export OS_PROJECT_NAME=${KEYSTONE_PROJECT_NAME}
+				export OS_USERNAME=${KEYSTONE_ADMIN_NAME}
+				export OS_PASSWORD=${KEYSTONE_ADMIN_PASSWORD}
+				export OS_AUTH_URL=http://${KEYSTONE_ENDPOINT_IP}:35357/v3/
+				export OS_IDENTITY_API_VERSION=3
+				export OS_AUTH_VERSION=3
+				export OS_PROJECT_DOMAIN_ID=default
+				export OS_USER_DOMAIN_ID=default
+				export OS_NO_CACHE=1
+				NUM_LINES=$(OS_PASSWORD=${KEYSTONE_ADMIN_PASSWORD} openstack service list --format=csv | q -d , -H 'SELECT ID FROM - WHERE `Type`="'${SERVICE_TYPE}'"' | wc -l)
+				if [ "${NUM_LINES}" = "0" ] ; then
+					openstack service create --name=${SERVICE_NAME} --description="${SERVICE_DESC}" ${SERVICE_TYPE}
+					openstack endpoint create --region "${REGION_NAME}" ${SERVICE_NAME} public   http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+					openstack endpoint create --region "${REGION_NAME}" ${SERVICE_NAME} internal http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+					openstack endpoint create --region "${REGION_NAME}" ${SERVICE_NAME} admin    http://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+				else
+					echo "Service already registered: skipping service endpoint creation."
+				fi
+			else
+				echo "Problem in endpoint parameter (IPs or otherwise). Will skip service endpoint creation."
+			fi
 		fi
 		# Since there's very little chance a 2nd registration of the
 		# endpoint will be needed, we forget the value of
@@ -671,5 +735,10 @@ pkgos_register_endpoint_postinst () {
 	fi
 	# For security reasons, we don't keep the auth-token in the debconf
 	# memory, so we purge it with db_unregister.
-	db_unregister ${PKG_NAME}/keystone-auth-token
+	# And same for the new system: we must forget keystone-admin-password.
+	if db_get ${PKG_NAME}/keystone-auth-token ; then
+		db_unregister ${PKG_NAME}/keystone-auth-token
+	else
+		db_unregister ${PKG_NAME}/keystone-admin-password
+	fi
 }

@@ -21,7 +21,7 @@ fi
 PKG_NAME=${1}
 # Calculate the package name based on the command line argument
 LOWER_PKG_NAME=`echo ${PKG_NAME} | awk '{print tolower($0)}'`
-LOWER_PKG_NAME=`echo ${LOWER_PKG_NAME} | sed 's/_/-/'`
+LOWER_PKG_NAME=`echo ${LOWER_PKG_NAME} | sed 's/_/-/g'`
 if echo ${LOWER_PKG_NAME} | grep -q '^python-' ; then
 	DEB_PKG_NAME=${LOWER_PKG_NAME}
 else
@@ -135,10 +135,10 @@ Homepage: ${HOMEPAGE}
 Package: ${DEB_PKG_NAME}
 Architecture: all
 Depends: \${python:Depends}, \${misc:Depends}${SUGGEST_DOC}
-Description: ${SHORT_DESC} - Python 2.x
+Description: ${SHORT_DESC} - Python 2.7
  ${LONG_DESC}
  .
- This package contains the Python 2.x module.
+ This package contains the Python 2.7 module.
 
 Package: python3-${LOWER_PKG_NAME}
 Architecture: all
@@ -216,7 +216,7 @@ debian-branch = debian/unstable
 upstream-tag = %(version)s
 compression = xz
 
-[git-buildpackage]
+[buildpackage]
 export-dir = ../build-area/
 " >debian/gbp.conf
 
@@ -269,7 +269,7 @@ ${OSTACK_PKG_T_RULES}
 %:
 	dh \$@ --buildsystem=python_distutils --with python2,python3${RULES_WITH}
 
-override_dh_install:
+override_dh_auto_install:
 	set -e ; for pyvers in \$(PYTHONS); do \\
 		python\$\$pyvers setup.py install --install-layout=deb \\
 			--root \$(CURDIR)/debian/python-${LOWER_PKG_NAME}; \\

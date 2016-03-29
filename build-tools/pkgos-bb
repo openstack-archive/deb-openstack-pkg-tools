@@ -52,8 +52,13 @@ fi
 # Get info from packages.debian.org
 PKG_INFO_FILE=`mktemp -t pkg_info_file.XXXXXX`
 wget --no-check-certificate -O ${PKG_INFO_FILE} http://packages.debian.org/${SRC_DISTRO}/${PKG_NAME}
-DEB_VERSION=`rmadison --suite=${SRC_DISTRO} ${PKG_NAME} | grep -E 'amd64|all' | awk '{print $3}'`
-UPSTREAM_VERSION=`echo ${DEB_VERSION} | cut -d'-' -f1  | cut -d":" -f2`
+if [ `lsb_release -i -s` = "Ubuntu" ] ; then
+	RMADURL="--url=http://qa.debian.org/madison.php"
+else
+	RMADURL=""
+fi
+DEB_VERSION=`rmadison $RMADURL --suite=${SRC_DISTRO} ${PKG_NAME} | grep -E 'amd64|all' | awk '{print $3}'`
+UPSTREAM_VERSION=`echo ${DEB_VERSION} | sed 's/-[^-]*$//' | cut -d":" -f2`
 DSC_URL=`cat ${PKG_INFO_FILE} | grep dsc | cut -d'"' -f2`
 rm ${PKG_INFO_FILE}
 

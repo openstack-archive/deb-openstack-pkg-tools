@@ -19,7 +19,7 @@ fi
 if [ -z "${SYSTEM_USER}" ] ; then
 	SYSTEM_USER=${PROJECT_NAME}
 fi
-if [ -z "${SYSTEM_USER}" ] ; then
+if [ -z "${SYSTEM_GROUP}" ] ; then
 	SYSTEM_GROUP=${PROJECT_NAME}
 fi
 if [ "${SYSTEM_USER}" != "root" ] ; then
@@ -51,7 +51,9 @@ fi
 [ -r /etc/default/openstack ] && . /etc/default/openstack
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 [ "x$USE_SYSLOG" = "xyes" ] && DAEMON_ARGS="$DAEMON_ARGS --use-syslog"
-[ "x$USE_LOGFILE" != "xno" ] && DAEMON_ARGS="$DAEMON_ARGS --log-file=$LOGFILE"
+if [ -z "${NO_OPENSTACK_LOGFILE_DAEMON_ARG}" ] ; then
+	[ "x$USE_LOGFILE" != "xno" ] && DAEMON_ARGS="$DAEMON_ARGS --log-file=$LOGFILE"
+fi
 
 do_start() {
 	start-stop-daemon --start --quiet --background ${STARTDAEMON_CHUID} --make-pidfile --pidfile ${PIDFILE} --chdir /var/lib/${PROJECT_NAME} --startas $DAEMON \

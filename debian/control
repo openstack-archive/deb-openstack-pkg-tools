@@ -2,15 +2,22 @@ Source: openstack-pkg-tools
 Section: devel
 Priority: extra
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
-Uploaders: Thomas Goirand <zigo@debian.org>
-Build-Depends: debhelper (>= 9)
-Standards-Version: 3.9.6
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/openstack-pkg-tools.git;a=summary
-Vcs-Git: git://anonscm.debian.org/openstack/openstack-pkg-tools.git
+Uploaders: Thomas Goirand <zigo@debian.org>,
+           Ondřej Nový <novy@ondrej.org>,
+Build-Depends: debhelper (>= 9),
+Standards-Version: 3.9.7
+Vcs-Browser: https://anonscm.debian.org/gitweb/?p=openstack/openstack-pkg-tools.git;a=summary
+Vcs-Git: https://anonscm.debian.org/git/openstack/openstack-pkg-tools.git
 
 Package: openstack-pkg-tools
 Architecture: all
-Depends: madison-lite, pristine-tar, libxml-xpath-perl, ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Depends: autopkgtest,
+         libxml-xpath-perl,
+         madison-lite,
+         pristine-tar,
+         ${misc:Depends},
+         ${python:Depends},
+         ${shlibs:Depends},
 Description: Tools and scripts for building Openstack packages in Debian
  This package contains some useful shell scripts and helpers for building the
  Openstack packages in Debian, including:

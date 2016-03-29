@@ -347,7 +347,10 @@ configure_sbuild () {
 
 	# Create the actual schroot env
 	if ! [ -e /var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ] ; then
-		sbuild-createchroot --make-sbuild-tarball=/var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ${TARGET_DISTRO} `mktemp -d` ${CLOSEST_DEBIAN_MIRROR}
+		# Using tarballs
+#		sbuild-createchroot --make-sbuild-tarball=/var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ${TARGET_DISTRO} `mktemp -d` ${CLOSEST_DEBIAN_MIRROR}
+		# Using AUFS or overlay
+		sbuild-createchroot ${TARGET_DISTRO} /var/lib/sbuild/${TARGET_DISTRO} ${CLOSEST_DEBIAN_MIRROR}
 	fi
 
 	# Make sure git-buildpackage is using sbuild
