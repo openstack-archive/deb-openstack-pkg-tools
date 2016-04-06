@@ -9,6 +9,7 @@ detect_distro () {
 }
 
 
+
 # Get some version information out of the debian/changelog last entry
 get_deb_version() {
     PKG_NAME=$(dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2)
