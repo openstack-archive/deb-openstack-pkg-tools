@@ -147,7 +147,7 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
     sudo sed -i -e "s/^[ \t]*union-type[ \t]*=.*/union-type=${UNION_TYPE}/" ${SBUILD_CHROOTD_FN}
 
     # Configure ~/.sbuildrc to use our new sbuild chroot
-    GPG_KEY_ID=$(gpg --list-keys ${BUILDER_SYS_USERNAME} | grep ^pub | awk '{print \$2}' | cut -d/ -f2)
+    GPG_KEY_ID=$(gpg --list-keys ${BUILDER_SYS_USERNAME} | grep ^pub | awk '{print $2}' | cut -d/ -f2)
     DOT_SBUILDRC_PATH=${BUILDER_HOMEDIR}/.sbuildrc
     if ! [ -r "${DOT_SBUILDRC_PATH}" ] ; then
         echo "\$build_arch_all = 1;
