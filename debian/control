@@ -5,8 +5,8 @@ Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>,
            Ondřej Nový <novy@ondrej.org>,
 Build-Depends: debhelper (>= 9),
-Standards-Version: 3.9.7
-Vcs-Browser: https://anonscm.debian.org/gitweb/?p=openstack/openstack-pkg-tools.git;a=summary
+Standards-Version: 3.9.8
+Vcs-Browser: https://anonscm.debian.org/cgit/openstack/openstack-pkg-tools.git/
 Vcs-Git: https://anonscm.debian.org/git/openstack/openstack-pkg-tools.git
 
 Package: openstack-pkg-tools

@@ -1,3 +1,29 @@
+openstack-pkg-tools (44) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Fixed Vcs-Browser URL to new format
+
+  [ Thomas Goirand ]
+  * Added pkgos-infra-install-sbuild and pkgos-infra-build-pkg to build
+    OpenStack packages on upstream infra.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 19 Apr 2016 12:53:13 +0200
+
+openstack-pkg-tools (43) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Support custom shell in pkgos_var_user_group function
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 13 Apr 2016 21:01:27 +0000
+
+openstack-pkg-tools (42) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Changed default shell of daemons to /bin/false (disabled)
+  * Standards-Version is 3.9.8 now (no change)
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 13 Apr 2016 17:47:44 +0000
+
 openstack-pkg-tools (41) unstable; urgency=medium
 
   * Uploading to unstable.

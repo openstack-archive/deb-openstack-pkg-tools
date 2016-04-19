@@ -538,7 +538,7 @@ pkgos_adduser () {
 	VAR_UG_SHELL=${2}
 
 	if [ -z "${VAR_UG_SHELL}" ] ; then
-		VAR_UG_SHELL='/bin/bash'
+		VAR_UG_SHELL='/bin/false'
 	fi
 
 	# Create user and groups if they don't exist
@@ -562,9 +562,11 @@ pkgos_adduser () {
 
 pkgos_var_user_group () {
 	local VAR_UG_PKG_NAME
+	local VAR_UG_SHELL
 	VAR_UG_PKG_NAME=${1}
+	VAR_UG_SHELL=${2}
 
-	pkgos_adduser ${VAR_UG_PKG_NAME}
+	pkgos_adduser ${VAR_UG_PKG_NAME} ${VAR_UG_SHELL}
 
 	# Create /var/{lib,log}/<package> with that user/group if it doesn't exist
 	if [ ! -d /var/lib/${VAR_UG_PKG_NAME} ] ; then
