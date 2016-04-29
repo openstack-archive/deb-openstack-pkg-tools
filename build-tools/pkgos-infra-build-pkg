@@ -79,7 +79,9 @@ build_backport_package () {
     echo "===> Building using git-buildpackage"
     # Edit debian/changelog to show we're building a backport
     LAST_GIT_COMMIT=$(git log | head -n 1 | awk '{print $2}')
-    dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
+    #NUM_COMMITS_FROM_LAST_TAG=$(git describe | tr '-' '\n' | tail -n 2 | head -n 1)
+    NUM_COMMITS_FROM_LAST_TAG=$(git rev-list --no-merges $(git describe --no-abbrev --candidates=1)..HEAD | wc -l)
+    dch --newversion ${DEB_VERS}+${NUM_COMMITS_FROM_LAST_TAG}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
     git commit debian/changelog -m "Backport rebuilt by Jenkins in OpenStack infra."
     git checkout -b ${PACKAGING_BRANCH_NAME}
 
@@ -113,9 +115,13 @@ lintian_test_the_package () {
 }
 
 prepare_for_upload () {
-    mkdir -p ../uploads/${LAST_GIT_COMMIT}
-    mv ../build-area/* ../uploads/${LAST_GIT_COMMIT}
-    rm ../uploads/${LAST_GIT_COMMIT}/*.build
+    # When we switch to zuul v3, we can use this:
+    #UPDIR=../uploads
+    # Until then, we must stay in the WORKSPACE
+    UPDIR=uploads
+    mkdir -p ${UPDIR}/${LAST_GIT_COMMIT}
+    mv ../build-area/* ${UPDIR}/${LAST_GIT_COMMIT}
+    rm ${UPDIR}/${LAST_GIT_COMMIT}/*.build
 }
 
 # We need this because we don't re-login, and
