@@ -112,6 +112,12 @@ lintian_test_the_package () {
     lintian -I -E --pedantic ../build-area/*.changes
 }
 
+prepare_for_upload () {
+    mkdir -p ../uploads/${LAST_GIT_COMMIT}
+    mv ../build-area/* ../uploads/${LAST_GIT_COMMIT}
+    rm ../uploads/${LAST_GIT_COMMIT}/*.build
+}
+
 # We need this because we don't re-login, and
 # sbuild has just been installed:
 newgrp - sbuild
@@ -123,3 +129,4 @@ create_orig_tarball
 detect_branch_name
 build_backport_package
 lintian_test_the_package
+prepare_for_upload
