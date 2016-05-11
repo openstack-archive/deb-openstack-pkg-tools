@@ -1,0 +1,8 @@
+Code-Review+2: Thomas Goirand <thomas@goirand.fr>
+Workflow+1: Thomas Goirand <thomas@goirand.fr>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 11 May 2016 14:47:31 +0000
+Reviewed-on: https://review.openstack.org/311274
+Project: openstack/deb-openstack-pkg-tools
+Branch: refs/heads/debian/mitaka
