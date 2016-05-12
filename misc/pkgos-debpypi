@@ -127,9 +127,9 @@ Build-Depends: debhelper (>= 9),
                python-all,
                python3-setuptools,
                python3-all${SPHINX_BUILD_DEP}${OSTACK_PKG_T_CTRL}
-Standards-Version: 3.9.6
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/${DEB_PKG_NAME}.git
-Vcs-Git: git://anonscm.debian.org/openstack/${DEB_PKG_NAME}.git
+Standards-Version: 3.9.8
+Vcs-Browser: https://anonscm.debian.org/cgit/openstack/${DEB_PKG_NAME}.git/
+Vcs-Git: https://anonscm.debian.org/git/openstack/${DEB_PKG_NAME}.git
 Homepage: ${HOMEPAGE}
 
 Package: ${DEB_PKG_NAME}
@@ -263,7 +263,7 @@ echo "#!/usr/bin/make -f
 PYTHONS:=\$(shell pyversions -vr)
 PYTHON3S:=\$(shell py3versions -vr)
 
-UPSTREAM_GIT = git://github.com/<please-user>/${PKG_NAME}.git
+UPSTREAM_GIT := https://github.com/<please-user>/${PKG_NAME}.git
 ${OSTACK_PKG_T_RULES}
 
 %:
@@ -301,7 +301,8 @@ override_dh_installlogrotate override_dh_installgsettings:
 chmod +x debian/rules
 
 echo "version=3
-http://pypi.python.org/packages/source/${FIRST_LETTER}/${PKG_NAME} ${PKG_NAME}-(.*).tar.gz
+opts=uversionmangle=s/(rc|a|b|c)/~\$1/ \\
+https://pypi.debian.net/${PKG_NAME}/${PKG_NAME}-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
 " >debian/watch
 
 echo "3.0 (quilt)" >debian/source/format
