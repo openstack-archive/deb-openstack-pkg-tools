@@ -45,6 +45,7 @@ enable_init_start () {
 
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
+    sudo apt-get update
     sudo ${APT} git-buildpackage debhelper eatmydata build-essential \
         python-setuptools fakeroot python3-all python-all \
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
