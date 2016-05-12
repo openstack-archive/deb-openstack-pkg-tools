@@ -122,8 +122,9 @@ prepare_for_upload () {
 
 
     mkdir -p ${UPDIR}/${LAST_GIT_COMMIT}
-    mv ../build-area/* ${UPDIR}/${LAST_GIT_COMMIT}
+    cp ../build-area/* ${UPDIR}/${LAST_GIT_COMMIT}
     rm ${UPDIR}/${LAST_GIT_COMMIT}/*.build
+    cp -auxf ../build-area .
 }
 
 # We need this because we don't re-login, and
