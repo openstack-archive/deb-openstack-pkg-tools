@@ -1,3 +1,120 @@
+openstack-pkg-tools (52) UNRELEASED; urgency=medium
+
+  * Allow build with pkgos-bb / pkgos-bop on non-amd64 machines.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 18 Jun 2016 19:40:20 +0200
+
+openstack-pkg-tools (51) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Removed useless ${python:Depends} and ${shlibs:Depends} in depends
+
+  [ Thomas Goirand ]
+  * Check if debian/python-foo/usr/bin exists before attempting to rename files
+    in there.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 16 Jun 2016 08:42:43 +0000
+
+openstack-pkg-tools (50) unstable; urgency=medium
+
+  * Do not export OSLO_PACKAGE_VERSION in pkgos-dh_auto_install.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 11 Jun 2016 17:00:32 +0000
+
+openstack-pkg-tools (49) unstable; urgency=medium
+
+  * Fixed pkgos-dh_auto_install.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 11 Jun 2016 16:55:20 +0000
+
+openstack-pkg-tools (48) unstable; urgency=medium
+
+  * Added export OSLO_PACKAGE_VERSION so we don't have to do it in individual
+    packages.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 Jun 2016 20:34:41 +0000
+
+openstack-pkg-tools (47) unstable; urgency=medium
+
+  * Added PYTHONS:=$(shell pyversions -vr) PYTHON3S:=$(shell py3versions -vr)
+    in pkgos.make so we don't repeat it.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 Jun 2016 20:15:17 +0000
+
+openstack-pkg-tools (46) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Use dpkg-parsechangelog -S param instead of sed/cut/grep magic
+
+  [ Andrii Kroshchenko ]
+  * Add man page for pkgos.make
+
+  [ Ivan Udovichenko ]
+  * init-template/pkgos-gen-systemd-unit: increase default timeout to a
+    reasonable value (graceful_shutdown_timeout [1]). This change is higly
+    recommended for OpenStack services which use oslo.service library.
+    (LP: #1589490) See oslo_service/_options.py in the oslo.service package.
+
+  [ Thomas Goirand ]
+  * Fix pkgos-sbuild-jenkins for Ubuntu: do not attempt to install
+    linux-image-amd64 which doesn't exist in Ubuntu.
+  * Add build-tools/pkgos-dh_auto_install.
+  * Add build-tools/pkgos-dh_auto_test.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 Jun 2016 21:43:47 +0200
+
+openstack-pkg-tools (45) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Use https protocol for remote GIT fetching
+  * Added support for Documentation field in systemd units
+  * misc/pkgos-debpypi:
+    - Changed Vcs-* to https protocol
+    - Changed UPSTREAM_GIT to https protocol and made it simple exp. var
+    - Bumped Standards-Versions to 3.9.8
+    - Use pypi.debian.net for d/watch
+  * pkgos.make fetch-upstream-remote:
+    - Change local GIT remote if UPSTREAM_GIT changed
+    - Check if protocol of UPSTREAM_GIT is https
+  * d/copyright: Added myself
+  * pkgos-parse-requirements: added epoch 1 for python-neutronclient
+
+  [ Andrii Kroshchenko ]
+  * Add man pages for:
+    - pkgos-alioth-new-git
+    - pkgos-alternative-bin
+    - pkgos-bb.
+    - pkgos-bop
+    - pkgos-bop-jenkins
+    - pkgos-debpypi
+    - pkgos-fetch-fake-repo
+    - pkgos-fix-config-default
+    - pkgos-gen-systemd-unit
+    - pkgos-gen-upstart-job
+    - pkgos-infra-build-pkg
+    - pkgos-infra-install-sbuild
+    - pkgos-parse-requirements
+    - pkgos-reqsdiff
+    - pkgos-scan-repo
+    - pkgos-setup-sbuild
+    - pkgos-show-control-depends
+    - pkgos-testr
+    - pkgos-check-changelog
+  * Add new script: pkgos-check-changelog
+  * build-tools/pkgos-bb:
+    - add using pkgos-check-changelog
+  * build-tools/pkgos-bop:
+    - add using pkgos-check-changelog
+  * etc/pkgos/pkgos.conf
+    - add options for configuration behaivor pkgos-check-changelog
+
+  [ Thomas Goirand ]
+  * Uncompress manpages from Andrii Kroshchenko in the source tree.
+  * Added more text in man pages.
+  * Add fixes for overlayfs in pkgos-setup-sbuild.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 07 Jun 2016 07:35:22 +0000
+
 openstack-pkg-tools (44) unstable; urgency=medium
 
   [ Ondřej Nový ]

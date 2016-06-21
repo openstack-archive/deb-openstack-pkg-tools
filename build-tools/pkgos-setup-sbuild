@@ -17,6 +17,7 @@ fi
 detect_env () {
 	DEB_RELEASE=`lsb_release -a | grep Codename: | awk '{print $2}'`
 	DEB_RELEASE_NUM=`lsb_release -a | grep Release: | awk '{print $2}'`
+	DEB_DIST_TYPE=$(lsb_release -a | grep "Distributor ID:" | awk '{print $3}')
 	APT="apt-get install -y"
 	echo 'APT::Install-Recommends "0";' >/etc/apt/apt.conf.d/80norecommends
 }
@@ -45,13 +46,16 @@ ff02::3 ip6-allhosts
 }
 
 install_all_software () {
-	${APT} linux-image-amd64 sbuild apache2 screen joe apache2 pure-ftpd ftp most \
+	if [ "${DEB_DIST_TYPE}" = "Debian" ] ; then
+		ADDED_DEB_PKG="linux-image-amd64 jenkins-cli"
+	fi
+	${APT} ${ADDED_DEB_PKG} sbuild apache2 screen joe apache2 pure-ftpd ftp most \
 		man-db git-buildpackage debhelper eatmydata build-essential python-setuptools \
 		fakeroot python3-all python-all python3-setuptools pristine-tar dh-autoreconf ssl-cert \
 		dh-python dh-systemd python-sphinx sudo debootstrap openstack-pkg-tools \
 		lintian lsb-release postfix gem2deb
 	if [ "${DEV_OR_JENKINS}" = "jenkins" ] ; then
-		${APT} jenkins jenkins-job-builder jenkins-cli
+		${APT} jenkins jenkins-job-builder
 	fi
 }
 
@@ -336,6 +340,7 @@ configure_sbuildrc () {
 }
 
 configure_sbuild () {
+	USE_OVERLAY=yes
 	# Setup the gpg key for sbuild
 	mkdir -p /root/.gnupg
 	chmod 600 /root/.gnupg
@@ -345,12 +350,18 @@ configure_sbuild () {
 	# Add jenkins as a sbuild user
 	sbuild-adduser ${THE_DEV_USER}
 
-	# Create the actual schroot env
-	if ! [ -e /var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ] ; then
-		# Using tarballs
-#		sbuild-createchroot --make-sbuild-tarball=/var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ${TARGET_DISTRO} `mktemp -d` ${CLOSEST_DEBIAN_MIRROR}
-		# Using AUFS or overlay
-		sbuild-createchroot ${TARGET_DISTRO} /var/lib/sbuild/${TARGET_DISTRO} ${CLOSEST_DEBIAN_MIRROR}
+	if [ "${USE_OVERLAY}" = "yes" ] ; then
+		# Create the actual schroot env
+		if ! [ -e /var/lib/sbuild/${TARGET_DISTRO} ] ; then
+			# Using AUFS or overlay
+			sbuild-createchroot ${TARGET_DISTRO} /var/lib/sbuild/${TARGET_DISTRO} ${CLOSEST_DEBIAN_MIRROR}
+		fi
+	else
+		# Create the actual schroot env
+		if ! [ -e /var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ] ; then
+			# Using tarballs
+			sbuild-createchroot --make-sbuild-tarball=/var/lib/sbuild/${TARGET_DISTRO}-amd64.tar.gz ${TARGET_DISTRO} `mktemp -d` ${CLOSEST_DEBIAN_MIRROR}
+		fi
 	fi
 
 	# Make sure git-buildpackage is using sbuild
@@ -367,9 +378,15 @@ configure_sbuild () {
 	VERS=0.1
 	MYPKG_FILE_NAME=${NAME}_0.1_all.deb
 	LOCATION=debian/pool/${TARGET_DISTRO}-${TARGET_OPENSTACK_REL}-backports/main/${FIRST_LETTER}/${NAME}/${MYPKG_FILE_NAME}
-	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- apt-get install -y wget
-	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- wget http://localhost/${LOCATION}
-	schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- dpkg -i ${MYPKG_FILE_NAME}
+	if [ "${USE_OVERLAY}" = "yes" ] ; then
+		cp /home/ftp/${LOCATION} /var/lib/sbuild/${TARGET_DISTRO}
+		chroot /var/lib/sbuild/${TARGET_DISTRO} dpkg -i ${MYPKG_FILE_NAME}
+		rm /var/lib/sbuild/${TARGET_DISTRO}/${MYPKG_FILE_NAME}
+	else
+		schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- apt-get install -y wget
+		schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- wget http://localhost/${LOCATION}
+		schroot -c source:${TARGET_DISTRO}-amd64-sbuild -u root -- dpkg -i ${MYPKG_FILE_NAME}
+	fi
 
 	# Since we have already a first package (the archive-keyring one),
 	# let's scan the tree in /home/ftp/debian/pool, and build a valid Debian repo

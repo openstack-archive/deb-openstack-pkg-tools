@@ -61,10 +61,15 @@ else
 	SYSTEMD_RESTART="Restart=on-failure"
 fi
 
+if [ -n "${SYSTEMD_DOC}" ] ; then
+    SYSTEMD_DOC="Documentation=$SYSTEMD_DOC"
+fi
+
 echo "[Unit]
 Description=${DESC}
 $AFTER
 $BEFORE
+$SYSTEMD_DOC
 
 [Service]
 User=${SYSTEM_USER}
@@ -77,6 +82,7 @@ ExecStartPre=/bin/chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/lock/${PROJECT_NAME}
 ExecStart=${SCRIPTNAME} systemd-start
 $SYSTEMD_RESTART
 LimitNOFILE=65535
+TimeoutStopSec=65
 
 [Install]
 WantedBy=multi-user.target

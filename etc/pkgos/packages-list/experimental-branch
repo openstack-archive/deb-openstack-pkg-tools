@@ -1,1 +1,4 @@
-python-requests-mock
+python-django-babel
+python-pykmip
+voluptuous
+websockify

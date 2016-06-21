@@ -1,14 +1,19 @@
 # -*- Makefile -*-, you silly Emacs!
 # vim: set ft=make:
 
-DEBVERS		?= $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
+PYTHONS:=$(shell pyversions -vr)
+PYTHON3S:=$(shell py3versions -vr)
+
+DEBVERS		?= $(shell dpkg-parsechangelog -SVersion)
 VERSION		?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//')
-DEBFLAVOR	?= $(shell dpkg-parsechangelog | grep -E ^Distribution: | cut -d" " -f2)
-DEBPKGNAME	?= $(shell dpkg-parsechangelog | grep -E ^Source: | cut -d" " -f2)
-UPSTREAM_GIT	?= git://github.com/openstack/$(DEBPKGNAME).git
+DEBFLAVOR	?= $(shell dpkg-parsechangelog -SDistribution)
+DEBPKGNAME	?= $(shell dpkg-parsechangelog -SSource)
+UPSTREAM_GIT	?= https://github.com/openstack/$(DEBPKGNAME).git
 GIT_TAG		?= $(shell echo '$(VERSION)' | sed -e 's/~/_/')
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f2 | awk '{print $1}')
+
+export OSLO_PACKAGE_VERSION=$(shell dpkg-parsechangelog -SVersion | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//' -e 's/~/.0/' -e 's/+dfsg1//' | head -n 1)
 
 gen-init-configurations:
 	# Create the init scripts and systemd unit files from the template
@@ -72,7 +77,11 @@ get-orig-source:
 	uscan --verbose --force-download --rename --destdir=../build-area
 
 fetch-upstream-remote:
+ifeq (,$(findstring https:,$(UPSTREAM_GIT)))
+		$(error Using insecure proto in UPSTREAM_GIT: $(UPSTREAM_GIT))
+endif
 	git remote add upstream $(UPSTREAM_GIT) || true
+	git remote set-url upstream $(UPSTREAM_GIT)
 	git fetch upstream
 
 gen-orig-xz:

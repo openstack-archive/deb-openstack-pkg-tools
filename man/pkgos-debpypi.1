@@ -1,0 +1,29 @@
+.\" Contact akroshchenko@mirantis.com to correct errors or typos.
+.TH man 8 "27 Apr 2016" "45.0" "pkgos-debpypi man page"
+.SH NAME
+pkgos-debpypi \- create a template Debian package out of a PyPi package name.
+
+.SH SYNOPSIS
+.B pkgos-debpypi 
+[-u URL]
+<package_name>
+
+.SH DESCRIPTION
+.B pkgos-debpypi
+creates a template Debian package out of a PyPi package name. Once this script
+has run, make sure it did what you expected, then use the newly created source
+package as a template. Make sure you correct the debian/copyright file before
+publishing any package.
+
+.SH OPTIONS
+-u upload package from target URL
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Script is written by Thomas Goirand <zigo@debian.org>
+.PD 0
+.TP
+Man page is written by Andrii Kroshchenko <akroshchenko@mirantis.com>
+

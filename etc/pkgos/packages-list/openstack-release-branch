@@ -50,6 +50,7 @@ python-manilaclient
 python-mistralclient
 python-muranoclient
 python-neutronclient
+python-neutron-lib
 python-novaclient
 python-openstackclient
 python-openstacksdk

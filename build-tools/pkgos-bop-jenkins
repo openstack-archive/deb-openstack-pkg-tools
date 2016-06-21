@@ -57,8 +57,8 @@ is_server () {
 
 # Get some version information out of the debian/changelog last entry
 get_deb_version() {
-	PKG_NAME=`dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2`
-	DEB_VERS=`dpkg-parsechangelog | grep -E "^Version: " | cut -d" " -f2`
+	PKG_NAME=`dpkg-parsechangelog -SSource`
+	DEB_VERS=`dpkg-parsechangelog -SVersion`
 	NO_EPOC=`echo ${DEB_VERS} | cut -d":" -f2`
 	if echo ${DEB_VERS} | grep -q ':' ; then
 		EPOC=`echo ${DEB_VERS} | cut -d":" -f1`
