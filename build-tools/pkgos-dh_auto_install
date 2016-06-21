@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+set -x
+
+SRC_PKG_NAME=$(dpkg-parsechangelog -SSource)
+PY_MODULE_NAME=$(echo ${SRC_PKG_NAME} | sed s/python-//)
+
+PYTHONS=$(pyversions -vr 2>/dev/null)
+PYTHON3S=$(py3versions -vr 2>/dev/null)
+
+for pyvers in ${PYTHONS}; do
+	python${pyvers} setup.py install --install-layout=deb --root $(pwd)/debian/python-${PY_MODULE_NAME}
+done
+
+for pyvers in ${PYTHON3S}; do
+	python${pyvers} setup.py install --install-layout=deb --root $(pwd)/debian/python3-${PY_MODULE_NAME}
+done
+rm -rf $(CURDIR)/debian/python*/usr/lib/python*/dist-packages/*.pth
+
+if [ -d $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin ] ; then
+	for i in $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/* ; do
+		SCRIPT_NAME=$(basename ${i})
+		mv $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/${SCRIPT_NAME} $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/python2-${SCRIPT_NAME}
+		mv $(pwd)/debian/python3-${PY_MODULE_NAME}/usr/bin/${SCRIPT_NAME} $(pwd)/debian/python3-${PY_MODULE_NAME}/usr/bin/python3-${SCRIPT_NAME}
+	done
+fi

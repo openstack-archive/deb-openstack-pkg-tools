@@ -21,12 +21,6 @@ fi
 
 # Some quick calculation
 BPO_DISTRO_NUM=~bpo${TARGET_DISTRO_NUM}+1
-if [ `uname -m` = "x86_64" ] ; then
-	BOP_BUILD_ARCH=amd64
-else
-	echo "Arch not supported: exiting."
-	exit 1
-fi
 
 cleanup_old_build () {
 	echo "===> Cleaning-up old builds"
@@ -35,8 +29,8 @@ cleanup_old_build () {
 
 # Finds the current version of the package
 get_deb_version() {
-	PKG_NAME=`dpkg-parsechangelog | grep -E "^Source:" | cut -d" " -f2`
-	DEB_VERS=`dpkg-parsechangelog | grep -E "^Version: " | cut -d" " -f2`
+	PKG_NAME=`dpkg-parsechangelog -SSource`
+	DEB_VERS=`dpkg-parsechangelog -SVersion`
 	NO_EPOC=`echo ${DEB_VERS} | cut -d":" -f2`
 	UPSTREAM_VERS=`echo ${NO_EPOC} | cut -d"-" -f1`
 	if [ "${DEB_VERS}" = "${UPSTREAM_VERS}" ] ; then IS_NATIVE="yes" ; else IS_NATIVE="no" ; fi
@@ -75,6 +69,7 @@ bop_it () {
 	LAST_GIT_COMMIT=`git log | head -n 1 | awk '{print $2}'`
 	dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Rebuilt by bop."
 	git commit debian/changelog -m "Rebuilt by bop."
+	pkgos-check-changelog || true
 	if [ "${PKGOS_RUN_UNIT_TESTS_AT_BUILD}" = "no" ] ; then
 		if ! DEB_BUILD_OPTIONS=nocheck git-buildpackage ; then
 			git reset --hard ${LAST_GIT_COMMIT}
@@ -113,7 +108,7 @@ test_the_package () {
 
 copy_to_ftparchive () {
 	echo "===> Copying to the FTP repo"
-	rm ../build-area/${PKG_NAME}_${NO_EPOC}${BPO_DISTRO_NUM}_amd64.build
+	rm ../build-area/${PKG_NAME}_${NO_EPOC}${BPO_DISTRO_NUM}_*.build
 	TARGET_FOLDER=${REPO_ROOT}/debian/pool/${TARGET_DISTRO}-${TARGET_OPENSTACK_REL}-backports/main/${PKG_NAME_FIRST_CHAR}/${PKG_NAME}
 	rm -rf ${TARGET_FOLDER}
 	mkdir -p ${TARGET_FOLDER}

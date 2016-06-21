@@ -57,7 +57,7 @@ is_build_depends () {
 	done
 }
 
-EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-swiftclient python-oslo.config"
+EPOC_1_IN="python-cinderclient python-keystoneclient python-glanceclient python-swiftclient python-neutronclient python-oslo.config"
 has_1_in_epoc () {
 	HAS_1_IN_EPOC="no"
 	for i in ${EPOC_1_IN} ; do

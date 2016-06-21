@@ -1,0 +1,23 @@
+.\" Contact akroshchenko@mirantis.com to correct errors or typos.
+.TH man 8 "27 Apr 2016" "45.0" " pkgos-fetch-fake-repo man page"
+.SH NAME
+pkgos-fetch-fake-repo \- prepear repository(folder) which contain Packages.gz and Sources.gz files of target distrobution.
+.SH SYNOPSIS
+.B  pkgos-fetch-fake-repo
+.SH DESCRIPTION
+.B pkgos-fetch-fake-repo 
+prepares a /etc/pkgos/fake-${TARGET_DISTRO}-mirror folder
+with Packages.gz and Sources.gz files so that we can later on use
+the madison-lite script when using pkgos-parse-requirements.
+Indeed, using rmadison for this task is a way too slow, considering the
+average amount of dependency in a typical OpenStack component.
+.SH OPTIONS
+The \fBpkgos-fetch-fake-repo\fR does not take any options.
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+Script is written by Thomas Goirand <zigo@debian.org>
+.PD 0
+.TP
+Man page is written by Andrii Kroshchenko <akroshchenko@mirantis.com>
+

@@ -91,6 +91,9 @@ dpkg-source -x *.dsc
 cd ${SOURCE_NAME}-${UPSTREAM_VERSION}
 dch --newversion ${DEB_VERSION}~${BPO_POSTFIX} -b --allow-lower-version --distribution ${TARGET_DISTRO}-backports -m  "Rebuilt for ${TARGET_DISTRO}."
 
+# Chech changelog
+pkgos-check-changelog || true
+
 # Build the package
 sbuild
 

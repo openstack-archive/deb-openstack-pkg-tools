@@ -1,0 +1,217 @@
+#!/bin/bash
+
+# set -o errexit
+# set -x
+
+
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
+
+GetoptsVariables() {
+	while getopts ":e:s:f:a:h" opt; do
+		case ${opt} in
+			e)
+				LOOK_FOR_FORMAT_ERRORS_MODE=${OPTARG}
+				;;
+			s)
+				SORTING_VERSION_MODE=${OPTARG}
+				;;
+			a)
+				FIND_ANOMALIES=${OPTARG}
+				;;
+			f)
+				INPUT_FILE=${OPTARG}
+				;;
+			h)
+				ShowUsage
+				exit 1
+				;;
+			*)
+				echo "Wrong option for the pkgos-check-changelog"
+				exit 1
+		esac
+	done
+}
+
+ShowUsage() {
+cat << EOF
+
+
+Using pkgos-check-changelog
+
+	OPTION	POSSIBLE VALUES 	DESCRIPTION
+	______	_______________		__________________________
+
+	-a	yes|no			Find anomalies
+
+	-e	disable|		Find format errors
+		notification|
+		perform
+
+	-f	<path>			Path to the changelog file
+
+	-s 	disable|		Sorting by version
+		notification|
+		perform
+
+	-h 				Help message
+
+EOF
+}
+
+GetPackageName() {
+	WORK_FILE=$(mktemp -t WORK_FILE.XXXXX)
+	cp ${INPUT_FILE} ${WORK_FILE}
+	i=0
+	while [ -z "$(head -n 1 ${WORK_FILE})" ]; do
+		i=$((i + 1))
+		if [ $i -gt 100 ]; then
+			echo "Too many empty lines in the beginning"
+			exit 1
+		fi
+		sed -i "1d" "${WORK_FILE}"
+	done
+	GLOBAL_NAME_OF_PACKAGE="$(head -n 1 ${WORK_FILE} |cut -d" " -f1|cut -d"-" -f1)"
+	rm ${WORK_FILE}
+}
+
+LookforFormatErrors() {
+	FORMAT_ERROR_FLAG=0
+	echo "LOOKING FOR FORMAT ERRORS===================================="
+	FORMAT_ERROR_WORK_FILE=$(mktemp -t FORMAT_ERROR_WORK_FILE.XXXXX)
+	cp ${INPUT_FILE} ${FORMAT_ERROR_WORK_FILE}
+	echo >> "${FORMAT_ERROR_WORK_FILE}"
+	sed -i "s/ *$//" "${FORMAT_ERROR_WORK_FILE}"
+	sed -i "/${GLOBAL_NAME_OF_PACKAGE}.*urgency.*/ s/^ *//" "${FORMAT_ERROR_WORK_FILE}"
+	sed -i "/--.*>/ s/^ */ /" "${FORMAT_ERROR_WORK_FILE}"
+	if [ "${LOOK_FOR_FORMAT_ERRORS_MODE}" = "perform" ]; then
+		FORMAT_ERROR_FLAG=1
+		cp ${FORMAT_ERROR_WORK_FILE} ${INPUT_FILE}
+	elif [ "${LOOK_FOR_FORMAT_ERRORS_MODE}" = "notification" ]; then
+		echo "Check next lines:"
+		diff -u ${INPUT_FILE} ${FORMAT_ERROR_WORK_FILE} |grep -e "^-[^-]" |sed "s/^-//g"
+	else
+		echo "Wrong value of LOOK_FOR_FORMAT_ERRORS_MODE"
+ 	fi
+ 	rm ${FORMAT_ERROR_WORK_FILE}
+ }
+
+PrintBody() {
+	local LINE_1 LINE NAME VERSION FLAG
+	local INPUT_ORDER=$1
+	while IFS= read LINE_1; do
+		if $(echo "${LINE_1}" |grep -q "^${GLOBAL_NAME_OF_PACKAGE}"); then
+			NAME="$( echo "${LINE_1}" |cut -d " " -f 1 )"
+			VERSION="$( echo "${LINE_1}" |cut -d " " -f 2 | sed -e "s/\((\|)\)//g")"
+			FLAG=0
+		fi
+		while IFS= read -r LINE; do
+			if [ "${FLAG}" -eq 1 ]; then
+				if echo "${LINE}" | grep "<.*@.*>" | grep -qe "^ -- "; then
+					echo "${LINE}"
+					echo ""
+					break
+				fi
+				echo "${LINE}"
+			fi
+			if echo "${LINE}" | grep -q "${NAME}" && echo "${LINE}" | grep -qw "(${VERSION})"; then
+				echo "${LINE}"
+				FLAG=1
+			fi
+		done<${INPUT_FILE}
+	done<${INPUT_ORDER}
+}
+
+SortbyVersion() {
+	local LINE
+	WORK_FILE=$(mktemp -t WORK_FILE.XXXXX)
+	cp ${INPUT_FILE} ${WORK_FILE}
+	MY_VER_SORT_TEMP_MOS_SUFFIX=$(mktemp -t MY_VER_SORT_TEMP_MOS_SUFFIX.XXXXX)
+	MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX=$(mktemp -t MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX.XXXXX)
+	echo "SORTING_BY_VERSION=========================================="
+	if [ ${FORMAT_ERROR_FLAG} -eq 0 ]; then
+		echo "For correct work before sorting by version need check file for format errors!"
+	fi
+	if grep "^${GLOBAL_NAME_OF_PACKAGE}" "${WORK_FILE}" |grep -q ":" ; then
+		sed -i "${GLOBAL_NAME_OF_PACKAGE}.*([0-9][^:]/s/(/(0:/g" "${WORK_FILE}"
+	fi
+	echo "$(grep "^${GLOBAL_NAME_OF_PACKAGE}" "${WORK_FILE}" | cut -d " " -f 1,2 |grep  mos| sort -Vru | sed -e "s/\((\|)\)//g")" > "${MY_VER_SORT_TEMP_MOS_SUFFIX}"
+	echo "$(grep "^${GLOBAL_NAME_OF_PACKAGE}" "${WORK_FILE}" | cut -d " " -f 1,2 | grep -v mos| sort -Vru | sed -e "s/\((\|)\)//g")" > "${MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX}"
+	if [ -n "$(cat ${MY_VER_SORT_TEMP_MOS_SUFFIX})" ];then
+		while read LINE; do
+			sed -i "/${LINE%~*}/ i\\${LINE}" ${MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX}
+		done<${MY_VER_SORT_TEMP_MOS_SUFFIX}
+	fi
+	PrintBody "${MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX}" > "${WORK_FILE}"
+	sed -i "/^${GLOBAL_NAME_OF_PACKAGE}.*(0:/s/(0:/(/g" "${WORK_FILE}"
+	if [ "${SORTING_VERSION_MODE}" = "perform" ]; then
+		cp ${WORK_FILE} ${INPUT_FILE}
+	elif [ "${SORTING_VERSION_MODE}" = "notification" ]; then
+		echo "Proposed variants marked '+', exist variants marked '-'"
+		diff -u <(grep "^${GLOBAL_NAME_OF_PACKAGE}" "${INPUT_FILE}" | cut -d" " -f 1,2 | sed -e "s/\((\|)\)//g")  ${MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX}
+	else
+		echo "Wrong value of SORTING_VERSION_MODE"
+ 	fi
+ 	rm "${WORK_FILE}" "${MY_VER_SORT_TEMP_WITHOUT_MOS_SUFFIX}" "${MY_VER_SORT_TEMP_MOS_SUFFIX}"
+}
+
+LookforAnomalies() {
+	local DATE_1 DATE_2 VERSION_1 VERSION_2 LINE LINE_1
+	echo "LOOKING FOR ANOMALIES======================================="
+	i=0
+	j=0
+	while read true ; do
+		i=$((i + 1))
+		if dpkg-parsechangelog -o $i -c 1 --show-field source --format rfc822 -l ${INPUT_FILE} &>/dev/null ; then
+			break
+		fi
+		VERSION_1="$(dpkg-parsechangelog -n $i --show-field version --format rfc822 -l ${INPUT_FILE})"
+		DATE_1="$(dpkg-parsechangelog -n $i --show-field date --format rfc822 -l ${INPUT_FILE})"
+		while read true; do
+			j=$((i + 1))
+			if dpkg-parsechangelog -o $j -c 1 --show-field source --format rfc822 -l ${INPUT_FILE} &>/dev/null ; then
+				break
+			fi
+			VERSION_2="$(dpkg-parsechangelog -n $j --show-field version --format rfc822 -l ${INPUT_FILE} )"
+			DATE_2="$(dpkg-parsechangelog -n $j --show-field date --format rfc822 -l ${INPUT_FILE})"
+			if dpkg --compare-versions "${VERSION_1}" gt "${VERSION_2}" ; then
+				if [ `date -d ${DATE_1} +%s` -gt `date -d ${DATE_2} +%s` ]; then
+					continue
+				else
+					echo "anomaly is in a date between :"
+					echo "${VERSION_1} ${DATE_1} and ${VERSION_2} ${DATE_2}"
+					exit 1
+				fi
+			elif dpkg --compare-versions "${VERSION_1%~*}" ge "${VERSION_2}" ; then
+				if [ `date -d ${DATE_1} +%s` -gt `date -d ${DATE_2} +%s` ]; then
+					continue
+				else
+					echo "anomaly is in a date between :"
+					echo "${VERSION_1} ${DATE_1} and ${VERSION_2} ${DATE_2}"
+					exit 1
+				fi
+			fi
+			done<${INPUT_FILE}
+	done<${INPUT_FILE}
+}
+
+GetoptsVariables ${@}
+GetPackageName
+echo "LOOK_FOR_FORMAT_ERRORS_MODE = ${LOOK_FOR_FORMAT_ERRORS_MODE}"
+echo "SORTING_VERSION_MODE = ${SORTING_VERSION_MODE}"
+echo "FIND_ANOMALIES = ${FIND_ANOMALIES}"
+if [ "${LOOK_FOR_FORMAT_ERRORS_MODE}" != "disable" ]; then
+	LookforFormatErrors
+fi
+if [ "${SORTING_VERSION_MODE}" != "disable" ]; then
+	SortbyVersion
+fi
+if [ "${FIND_ANOMALIES}" != "no" ]; then
+	LookforAnomalies
+fi
+
+

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+set -x
+
+PYTHONS=$(pyversions -vr 2>/dev/null)
+PYTHON3S=$(py3versions -vr 2>/dev/null)
+
+for pyvers in 2.7 ${PYTHON3S}; do
+	PYMAJOR=$(echo ${pyvers} | cut -d'.' -f1)
+	echo "===> Testing with python${pyers} (python${PYMAJOR})"
+	rm -rf .testrepository
+	testr-python${PYMAJOR} init
+	TEMP_REZ=$(mktemp -t)
+	PYTHONPATH=$(pwd) PYTHON=python${pyvers} testr-python${PYMAJOR} run --subunit ${1} | tee ${TEMP_REZ} | subunit2pyunit
+	cat ${TEMP_REZ} | subunit-filter -s --no-passthrough | subunit-stats
+	rm -f ${TEMP_REZ}
+	testr-python${PYMAJOR} slowest
+	rm -rf .testrepository
+done

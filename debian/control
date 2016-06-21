@@ -16,8 +16,6 @@ Depends: autopkgtest,
          madison-lite,
          pristine-tar,
          ${misc:Depends},
-         ${python:Depends},
-         ${shlibs:Depends},
 Description: Tools and scripts for building Openstack packages in Debian
  This package contains some useful shell scripts and helpers for building the
  Openstack packages in Debian, including:
