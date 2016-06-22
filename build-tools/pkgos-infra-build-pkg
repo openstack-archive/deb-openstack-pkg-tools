@@ -79,7 +79,7 @@ build_backport_package () {
     echo "===> Building using git-buildpackage"
     # Edit debian/changelog to show we're building a backport
     LAST_GIT_COMMIT=$(git log | head -n 1 | awk '{print $2}')
-    DEBEMAIL=jenkins@openstack.org dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
+    DEBFULLNAME="Jenkins" DEBEMAIL=jenkins@openstack.org dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
     git commit debian/changelog -m "Backport rebuilt by Jenkins in OpenStack infra."
     git checkout -b ${PACKAGING_BRANCH_NAME}
 
