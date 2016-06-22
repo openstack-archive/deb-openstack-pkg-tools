@@ -79,15 +79,9 @@ build_backport_package () {
     echo "===> Building using git-buildpackage"
     # Edit debian/changelog to show we're building a backport
     LAST_GIT_COMMIT=$(git log | head -n 1 | awk '{print $2}')
-    DEBEMAIL=jenkins@openstack.org dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
+    DEBFULLNAME="Jenkins" DEBEMAIL=jenkins@openstack.org dch --newversion ${DEB_VERS}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
     git commit debian/changelog -m "Backport rebuilt by Jenkins in OpenStack infra."
     git checkout -b ${PACKAGING_BRANCH_NAME}
-
-    #
-    echo "Checking /etc/passwd and /etc/group just to please clarkb"
-    cat /etc/group | grep sbuild
-    cat /etc/passwd | grep sbuild
-    echo "Now attempting to build with sbuild"
 
     # Create ssh key
     if ! [ -e ~/.ssh/id_rsa ] ; then
@@ -98,6 +92,7 @@ build_backport_package () {
     cat ~/.ssh/id_rsa.pub >>~/.ssh/authorized_keys2
 
     # Build the package with gbp buildpackage
+    echo "===> Building with gbp buildpackage from ${WORKSPACE}"
     if ! ssh -o "StrictHostKeyChecking no" localhost "cd ${WORKSPACE} ; gbp buildpackage" ; then
         git reset --hard ${LAST_GIT_COMMIT}
         echo "Error building the package with gbp buildpackage: exiting."
@@ -112,6 +107,19 @@ lintian_test_the_package () {
     lintian -I -E --pedantic ../build-area/*.changes
 }
 
+prepare_for_upload () {
+    # When we switch to zuul v3, we can use this:
+    #UPDIR=../uploads
+    # Until then, we must stay in the WORKSPACE
+    UPDIR=uploads
+
+    mkdir -p ${UPDIR}/${LAST_GIT_COMMIT}
+    cp ../build-area/* ${UPDIR}/${LAST_GIT_COMMIT}
+    rm ${UPDIR}/${LAST_GIT_COMMIT}/*.build
+    cp -auxf ../build-area .
+}
+
+
 # We need this because we don't re-login, and
 # sbuild has just been installed:
 newgrp - sbuild
@@ -123,3 +131,4 @@ create_orig_tarball
 detect_branch_name
 build_backport_package
 lintian_test_the_package
+prepare_for_upload
