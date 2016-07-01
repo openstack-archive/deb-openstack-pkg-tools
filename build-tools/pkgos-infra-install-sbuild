@@ -50,7 +50,10 @@ install_all_software () {
         python-setuptools fakeroot python3-all python-all \
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
         dh-python dh-systemd python-sphinx sudo debootstrap \
-        openstack-pkg-tools lintian lsb-release gem2deb gnupg sbuild
+        openstack-pkg-tools lintian lsb-release gem2deb gnupg haveged
+    if [ "${DISTRO_NAME}" = "jessie" ] ; then
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild
+    fi
 }
 
 configure_dotgitconfig () {
@@ -81,6 +84,7 @@ Name-Email: ${BUILDER_SYS_USERNAME}@openstack.org
 Expire-Date: 0
 " >${BUILDER_HOMEDIR}/.gnupg/pkgos-gen-key-batchfile
     fi
+    sudo chown -R jenkins:jenkins ${BUILDER_HOMEDIR}/.gnupg
     su jenkins -c "gpg --gen-key --batch ${BUILDER_HOMEDIR}/.gnupg/pkgos-gen-key-batchfile"
 }
 
@@ -157,6 +161,11 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
 # We may run lintian by hand later on
 # not need to get git-buildpackage to do it
 \$run_lintian = 0;
+
+# We don't want to run clean of source tree before
+# entering the chroot, because that would mean we need
+# some of the build dependencies.
+\$clean_source = 0;
 
 # In case we decide to no sign packages, uncomment this:
 #\$pgp_options = '-us -uc';
