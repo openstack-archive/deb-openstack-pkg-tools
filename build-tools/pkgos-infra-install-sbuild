@@ -51,6 +51,13 @@ install_all_software () {
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
         dh-python dh-systemd python-sphinx sudo debootstrap \
         openstack-pkg-tools lintian lsb-release gem2deb gnupg sbuild
+    if [ "${DISTRO_NAME}" = "jessie" ] ; then
+        sudo echo "deb http://httpredir.debian.org/debian jessie-backports main
+deb-src http://httpredir.debian.org/debian jessie-backports main
+" >/etc/apt-sources.list.d/jessie-backports.list
+        apt-get update
+        apt-get install -t jessie-backports sbuild
+    fi
 }
 
 configure_dotgitconfig () {
@@ -157,6 +164,11 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
 # We may run lintian by hand later on
 # not need to get git-buildpackage to do it
 \$run_lintian = 0;
+
+# We don't want to run clean of source tree before
+# entering the chroot, because that would mean we need
+# some of the build dependencies.
+\$clean_source = 0;
 
 # In case we decide to no sign packages, uncomment this:
 #\$pgp_options = '-us -uc';
