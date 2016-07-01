@@ -158,6 +158,11 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
 # not need to get git-buildpackage to do it
 \$run_lintian = 0;
 
+# We don't want to run clean of source tree before
+# entering the chroot, because that would mean we need
+# some of the build dependencies.
+\$clean_source = 0;
+
 # In case we decide to no sign packages, uncomment this:
 #\$pgp_options = '-us -uc';
 
