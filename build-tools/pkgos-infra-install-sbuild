@@ -64,9 +64,10 @@ configure_dotgitconfig () {
 # This key will be used to sign the built package
 gen_package_build_key () {
     echo "===> Generating builder's GPG key to sign packages"
-    mkdir -p ${BUILDER_HOMEDIR}/.gnupg
-    chmod 700 ${BUILDER_HOMEDIR}/.gnupg
-    chmod 700 ${BUILDER_HOMEDIR}/.gnupg
+    if ! [ -d ${BUILDER_HOMEDIR}/.gnupg ] ; then
+        mkdir -p ${BUILDER_HOMEDIR}/.gnupg
+        chmod 755 ${BUILDER_HOMEDIR}/.gnupg
+    fi
     if ! [ -r ${BUILDER_HOMEDIR}/.gnupg/gpg.conf ] ; then
         echo "keyserver hkp://pool.sks-keyservers.net
 personal-digest-preferences SHA256
@@ -84,8 +85,8 @@ Name-Email: ${BUILDER_SYS_USERNAME}@openstack.org
 Expire-Date: 0
 " >${BUILDER_HOMEDIR}/.gnupg/pkgos-gen-key-batchfile
     fi
-    sudo chown -R jenkins:jenkins ${BUILDER_HOMEDIR}/.gnupg
-    su jenkins -c "gpg --gen-key --batch ${BUILDER_HOMEDIR}/.gnupg/pkgos-gen-key-batchfile"
+    sudo chown -R ${BUILDER_SYS_USERNAME}:${BUILDER_SYS_USERNAME} ${BUILDER_HOMEDIR}/.gnupg
+    su ${BUILDER_SYS_USERNAME} -c "gpg --gen-key --batch ${BUILDER_HOMEDIR}/.gnupg/pkgos-gen-key-batchfile"
 }
 
 configure_sbuild () {
