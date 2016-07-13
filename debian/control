@@ -25,6 +25,7 @@ Description: Tools and scripts for building OpenStack packages in Debian
     systemd and upstart.
   * tools to build backports using sbuild and/or Jenkins based on gbp workflow.
   * utility to maintain git packaging (to be included in a debian/rules).
+  * shell tools to use in debian/rules.
  .
  Even if this package is maintained in order to build OpenStack packages, it is
  of a general purpose, and it can be used for building any package.
