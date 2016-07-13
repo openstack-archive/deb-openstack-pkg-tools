@@ -24,7 +24,7 @@ Description: Tools and scripts for building OpenStack packages in Debian
   * init script templates to automatically generate init scripts for sysv-rc,
     systemd and upstart.
   * Sid/Experimental backport to Debian stable or Ubuntu LTS scripts.
-  * sbuild automated setup script.
+  * sbuild automated setup script, with optional Jenkins installation.
   * utility to maintain git packaging (to be included in a debian/rules).
   * shell tools to use in debian/rules.
  .
