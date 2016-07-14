@@ -12,6 +12,7 @@
 set -e
 set -x
 
+OSTACK_RELEASE=newton
 BUILDER_SYS_USERNAME="jenkins"
 BUILDER_HOMEDIR=/home/jenkins
 GITREPO_ROOT=${WORKSPACE}
@@ -25,6 +26,7 @@ APT="DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends"
 detect_distro () {
     DISTRO_VENDOR=$(lsb_release --id -s | awk '{print tolower($0)}')
     DISTRO_NAME=$(lsb_release -c -s)
+    SBUILD_DISTNAME=${DISTRO_NAME}-${OSTACK_RELEASE}
 }
 
 disable_init_start () {
@@ -102,8 +104,8 @@ configure_sbuild () {
 
     echo "===> Creating sbuild's schroot chroot using a directory backend (ie: not tarball)"
     # Create the actual schroot env
-    if ! [ -e /var/lib/sbuild/${DISTRO_NAME} ] ; then
-        sudo sbuild-createchroot ${DISTRO_NAME} /var/lib/sbuild/${DISTRO_NAME} ${CLOSEST_DEBIAN_MIRROR}
+    if ! [ -e /var/lib/sbuild/${SBUILD_DISTNAME} ] ; then
+        sudo sbuild-createchroot ${DISTRO_NAME} /var/lib/sbuild/${SBUILD_DISTNAME} ${CLOSEST_DEBIAN_MIRROR}
     fi
 
     # Let's use a RAMDISK for sbuild chroot to build packages:
@@ -126,7 +128,12 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
     sudo sed -i 's/^[ #\t]*cleaner[ #\t]*=.*/cleaner = \/bin\/true/' /etc/git-buildpackage/gbp.conf
 
     # Fetch the full chroot.d filename
-    SBUILD_CHROOTD_FN=$(ls /etc/schroot/chroot.d/${DISTRO_NAME}-amd64-sbuild-*)
+    SBUILD_SRC_NAME=$(ls /etc/schroot/chroot.d/${DISTRO_NAME}-amd64-sbuild-*)
+    SBUILD_CHROOTD_FN=$(echo ${SBUILD_SRC_NAME} | sed s/${DISTRO_NAME}/${SBUILD_DISTNAME}/)
+
+    # Fix from jessie to jessie-newton
+    mv ${SBUILD_SRC_NAME} ${SBUILD_CHROOTD_FN}
+    sed -i s/${DISTRO_NAME}/${SBUILD_DISTNAME}/ ${SBUILD_CHROOTD_FN}
 
     # Switch from tarball to directory (ie: aufs) based build
     # (again, that's much faster...)
@@ -158,7 +165,7 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
     if ! [ -r "${DOT_SBUILDRC_PATH}" ] ; then
         echo "\$build_arch_all = 1;
 \$build_source = 1;
-\$distribution = '"${DISTRO_NAME}"';
+\$distribution = '"${SBUILD_DISTNAME}"';
 # We may run lintian by hand later on
 # not need to get git-buildpackage to do it
 \$run_lintian = 0;
