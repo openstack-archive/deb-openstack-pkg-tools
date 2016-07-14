@@ -105,7 +105,7 @@ build_backport_package () {
 
 lintian_test_the_package () {
     echo "===> Starting Lintian check"
-    lintian -I -E --pedantic ../build-area/*.changes
+    lintian -I -E --pedantic --suppress-tags bad-distribution-in-changes-file ../build-area/*.changes
 }
 
 prepare_for_upload () {
