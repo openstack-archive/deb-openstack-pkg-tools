@@ -1,0 +1,8 @@
+Code-Review+2: Ivan Udovichenko <iudovichenko@mirantis.com>
+Workflow+1: Ivan Udovichenko <iudovichenko@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 08 Aug 2016 10:44:45 +0000
+Reviewed-on: https://review.openstack.org/352296
+Project: openstack/deb-openstack-pkg-tools
+Branch: refs/heads/debian/newton
