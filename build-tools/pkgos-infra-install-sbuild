@@ -175,6 +175,9 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
 # some of the build dependencies.
 \$clean_source = 0;
 
+# Needed for sbuild to show output in deb-auto-backports
+\$verbose = 1;
+
 # In case we decide to no sign packages, uncomment this:
 #\$pgp_options = '-us -uc';
 
