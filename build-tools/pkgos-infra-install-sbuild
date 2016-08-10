@@ -17,17 +17,56 @@ BUILDER_SYS_USERNAME="jenkins"
 BUILDER_HOMEDIR=/home/jenkins
 GITREPO_ROOT=${WORKSPACE}
 
+DISTRO_VENDOR=$(lsb_release --id -s | awk '{print tolower($0)}')
+HOST_DISTRO_NAME=$(lsb_release -c -s)
+
+####################
+# Parse parameters #
+####################
+# There's 3 OS name concept concepts here:
+# HOST_DISTRO_NAME: the os of the host (example: jessie, xenial)
+# SBUILD_CHROOT_DISTRO_NAME: the name of the distro to setup in the chroot (example: jessie, xenial)
+# SBUILD_CHROOT_NAME: the name of the chroot we want to setup (example: jessie-newton or jessie-newton-backports)
+DO_EXIT="no"
+for i in $@ ; do
+    case "${1}" in
+    "--sbuild-chroot-name")
+        if [ -z "${2}" ] ; then echo "Parameter for option --sbuild-chroot-name is missing" > /dev/stderr ; DO_EXIT="yes" ; fi
+        SBUILD_CHROOT_NAME="${2}"
+        shift
+        shift
+    ;;
+    "--sbuild-chroot-distro-name")
+        if [ -z "${2}" ] ; then echo "Parameter for option --sbuild-chroot-distro-name is missing" > /dev/stderr ; DO_EXIT="yes" ; fi
+        SBUILD_CHROOT_DISTRO_NAME="${2}"
+        shift
+        shift
+    ;;
+    esac
+done
+
+if [ -z "${SBUILD_CHROOT_NAME}" ] ; then
+    SBUILD_CHROOT_NAME="${HOST_DISTRO_NAME}-${OSTACK_RELEASE}"
+fi
+
+if [ -z "${SBUILD_CHROOT_DISTRO_NAME}" ] ; then
+    SBUILD_CHROOT_DISTRO_NAME=${HOST_DISTRO_NAME}
+fi
+
+if [ ${DO_EXIT} = "yes" ] ; then
+    echo "Parameters not validated: will exit now!" > /dev/stderr
+    exit 1
+fi
+########################
+# End parse parameters #
+########################
+
 # Some configuration stuff
 CLOSEST_DEBIAN_MIRROR=http://httpredir.debian.org/debian
 
 PATH=/usr/bin:/usr/sbin:/bin:/sbin
 APT="DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends"
 
-detect_distro () {
-    DISTRO_VENDOR=$(lsb_release --id -s | awk '{print tolower($0)}')
-    DISTRO_NAME=$(lsb_release -c -s)
-    SBUILD_DISTNAME=${DISTRO_NAME}-${OSTACK_RELEASE}
-}
 
 disable_init_start () {
     TMPFILE=$(mktemp)
@@ -53,8 +92,13 @@ install_all_software () {
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
         dh-python dh-systemd python-sphinx sudo debootstrap \
         openstack-pkg-tools lintian lsb-release gem2deb gnupg haveged
-    if [ "${DISTRO_NAME}" = "jessie" ] ; then
+    # Jessie needs sbuild from jessie-backports, because it has the
+    # $clean_source = 0 option
+    if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
         DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild
+    # This code thinks anything else than jessie is higher version of sbuild
+    else
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends sbuild
     fi
 }
 
@@ -104,8 +148,8 @@ configure_sbuild () {
 
     echo "===> Creating sbuild's schroot chroot using a directory backend (ie: not tarball)"
     # Create the actual schroot env
-    if ! [ -e /var/lib/sbuild/${SBUILD_DISTNAME} ] ; then
-        sudo sbuild-createchroot ${DISTRO_NAME} /var/lib/sbuild/${SBUILD_DISTNAME} ${CLOSEST_DEBIAN_MIRROR}
+    if ! [ -e /var/lib/sbuild/${SBUILD_CHROOT_NAME} ] ; then
+        sudo sbuild-createchroot ${SBUILD_CHROOT_DISTRO_NAME} /var/lib/sbuild/${SBUILD_CHROOT_DISTRO_NAME} ${CLOSEST_DEBIAN_MIRROR}
     fi
 
     # Let's use a RAMDISK for sbuild chroot to build packages:
@@ -127,20 +171,23 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
     # but let's keep it there still, when we found out how to fix git-buildpackage).
     sudo sed -i 's/^[ #\t]*cleaner[ #\t]*=.*/cleaner = \/bin\/true/' /etc/git-buildpackage/gbp.conf
 
-    # Fetch the full chroot.d filename
-    SBUILD_SRC_NAME=$(ls /etc/schroot/chroot.d/${DISTRO_NAME}-amd64-sbuild-*)
-    SBUILD_CHROOTD_FN=$(echo ${SBUILD_SRC_NAME} | sed s/${DISTRO_NAME}/${SBUILD_DISTNAME}/)
-
     # Fix from jessie to jessie-newton
-    mv ${SBUILD_SRC_NAME} ${SBUILD_CHROOTD_FN}
-    sed -i s/${DISTRO_NAME}-amd64-sbuild/${SBUILD_DISTNAME}-amd64-sbuild/ ${SBUILD_CHROOTD_FN}
+    # or jessie to jessie-newton-backports
+    if ! [ "${SBUILD_CHROOT_NAME}" = "${SBUILD_CHROOT_DISTRO_NAME}" ] ; then
+        # Fetch the full chroot.d filename
+        SBUILD_SRC_NAME=$(ls /etc/schroot/chroot.d/${SBUILD_CHROOT_DISTRO_NAME}-amd64-sbuild-*)
+        SBUILD_CHROOTD_FN=$(echo ${SBUILD_SRC_NAME} | sed s/${SBUILD_CHROOT_DISTRO_NAME}/${SBUILD_CHROOT_NAME}/)
+
+        mv ${SBUILD_SRC_NAME} ${SBUILD_CHROOTD_FN}
+        sed -i s/${SBUILD_CHROOT_DISTRO_NAME}-amd64-sbuild/${SBUILD_CHROOT_NAME}-amd64-sbuild/ ${SBUILD_CHROOTD_FN}
+    fi
 
     # Switch from tarball to directory (ie: aufs) based build
     # (again, that's much faster...)
     sudo sed -i -e "s/^[ \t]*type[ \t]*=.*/type=directory/" ${SBUILD_CHROOTD_FN}
     # Tell that we'd like to use AUFS as backend for union FS
     # note that for Stretch and Xenial, we should switch to overlay instead
-    case ${DISTRO_NAME} in
+    case ${HOST_DISTRO_NAME} in
     jessie|trusty)
         UNION_TYPE=aufs
     ;;
@@ -165,7 +212,7 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
     if ! [ -r "${DOT_SBUILDRC_PATH}" ] ; then
         echo "\$build_arch_all = 1;
 \$build_source = 1;
-\$distribution = '"${SBUILD_DISTNAME}"';
+\$distribution = '"${SBUILD_CHROOT_NAME}"';
 # We may run lintian by hand later on
 # not need to get git-buildpackage to do it
 \$run_lintian = 0;
@@ -189,7 +236,6 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
     fi
 }
 
-detect_distro
 disable_init_start
 install_all_software
 configure_dotgitconfig
