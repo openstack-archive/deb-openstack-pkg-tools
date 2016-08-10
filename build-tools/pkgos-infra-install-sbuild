@@ -180,6 +180,8 @@ tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0  
 
         mv ${SBUILD_SRC_NAME} ${SBUILD_CHROOTD_FN}
         sed -i s/${SBUILD_CHROOT_DISTRO_NAME}-amd64-sbuild/${SBUILD_CHROOT_NAME}-amd64-sbuild/ ${SBUILD_CHROOTD_FN}
+        mv /var/lib/sbuild/${SBUILD_CHROOT_DISTRO_NAME} /var/lib/sbuild/${SBUILD_CHROOT_NAME}
+        sed -i "s#/var/lib/sbuild/${SBUILD_CHROOT_DISTRO_NAME}#/var/lib/sbuild/${SBUILD_CHROOT_NAME}#" ${SBUILD_CHROOTD_FN}
     fi
 
     # Switch from tarball to directory (ie: aufs) based build
