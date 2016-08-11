@@ -16,7 +16,7 @@ done
 for pyvers in ${PYTHON3S}; do
 	python${pyvers} setup.py install --install-layout=deb --root $(pwd)/debian/python3-${PY_MODULE_NAME}
 done
-rm -rf $(CURDIR)/debian/python*/usr/lib/python*/dist-packages/*.pth
+rm -rf $(pwd)/debian/python*/usr/lib/python*/dist-packages/*.pth
 
 if [ -d $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin ] ; then
 	for i in $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/* ; do
