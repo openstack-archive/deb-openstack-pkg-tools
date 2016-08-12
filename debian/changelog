@@ -1,6 +1,27 @@
-openstack-pkg-tools (52) UNRELEASED; urgency=medium
+openstack-pkg-tools (53) UNRELEASED; urgency=medium
 
+  * Added prerm and postrm functions to handle dbconfig-common db removal.
+  * Fixed log folder adm permissions.
+  * pkgos-alioth-new-git is now using rsync to upload, so it can resume.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 30 Jun 2016 13:32:09 +0200
+
+openstack-pkg-tools (52) unstable; urgency=medium
+
+  [ Thomas Goirand ]
   * Allow build with pkgos-bb / pkgos-bop on non-amd64 machines.
+  * Fix all "hyphen-used-as-minus-sign" manpage warnings.
+  * Don't use a setup hook for schroot to setup
+    /etc/apt/sources.list.d/openstack.list if we're using overlay / AUFS. In
+    such a case, just write in /var/lib/sbuild/${TARGET_DISTRO}/etc/apt.
+  * Don't attempt to install linux-image-amd64 jenkins-cli jenkins-job-builder,
+    and do not attempt using jenkins-job-builder anymore when setting-up a
+    Jenkins builder.
+  * Add backquotes when doing ALTER DATABASE after a db setup.
+
+  [ Ondřej Nový ]
+  * Don't add service user to adm group
+  * Use group adm for /var/log/<service> directory
 
  -- Thomas Goirand <zigo@debian.org>  Sat, 18 Jun 2016 19:40:20 +0200
 

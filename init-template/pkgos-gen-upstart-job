@@ -68,9 +68,13 @@ respawn limit 20 5
 limit nofile 65535 65535
 
 pre-start script
-	for i in lock run log lib ; do
+	for i in lock run lib ; do
 		mkdir -p /var/\$i/${PROJECT_NAME}
-		chown ${SYSTEM_USER} /var/\$i/${PROJECT_NAME}
+		chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/\$i/${PROJECT_NAME}
+	done
+	for i in log ; do
+		mkdir -p /var/\$i/${PROJECT_NAME}
+		chown ${SYSTEM_USER}:adm /var/\$i/${PROJECT_NAME}
 	done
 end script
 
