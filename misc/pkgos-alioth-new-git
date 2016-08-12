@@ -46,11 +46,15 @@ fi
 # Create the tarball and upload it to Alioth
 cd ..
 echo "===> Cloning ${PKG_NAME} as bare: ${PKG_NAME}.git"
-git clone --bare ${PKG_NAME} ${PKG_NAME}.git
+if ! [ -e ${PKG_NAME}.git ] ; then
+	git clone --bare ${PKG_NAME} ${PKG_NAME}.git
+fi
 echo "===> Building tarball: ${PKG_NAME}.git.tar.gz"
-tar -czf ${PKG_NAME}.git.tar.gz ${PKG_NAME}.git
+if ! [ -e ${PKG_NAME}.git.tar.gz ] ; then
+	tar -czf ${PKG_NAME}.git.tar.gz ${PKG_NAME}.git
+fi
 echo "===> Uploading ${PKG_NAME}.git.tar.gz to git.debian.org"
-scp ${PKG_NAME}.git.tar.gz ${ALIOTH_USERNAME}git.debian.org:
+rsync --partial --progress --rsh=ssh ${PKG_NAME}.git.tar.gz ${ALIOTH_USERNAME}git.debian.org:
 
 # Uncompress it on Alioth, fix perms and hook
 ssh ${ALIOTH_USERNAME}git.debian.org "cd /git/${DEST_PROJECT} && echo '===> Uncompressing ${PKG_NAME}.git.tar.gz in /git/${DEST_PROJECT}' && tar -xzf ~/${PKG_NAME}.git.tar.gz && echo '===> Activating update-server-info hook' &&  mv ${PKG_NAME}.git/hooks/post-update.sample ${PKG_NAME}.git/hooks/post-update && cd /git/${DEST_PROJECT}/${PKG_NAME}.git && git --bare update-server-info && echo '===> Deleting tarball on alioth' && rm ~/${PKG_NAME}.git.tar.gz && echo '===> Fixing g+w unix permissions' && find /git/${DEST_PROJECT}/${PKG_NAME}.git -exec chmod g+w {} \\; && find . -type d -exec chmod g+s {} \\; && git config core.sharedRepository group "

@@ -78,7 +78,8 @@ Type=${SYSTEMD_TYPE}
 WorkingDirectory=/var/lib/${PROJECT_NAME}
 PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
-ExecStartPre=/bin/chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/lock/${PROJECT_NAME} /var/log/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
+ExecStartPre=/bin/chown ${SYSTEM_USER}:${SYSTEM_GROUP} /var/lock/${PROJECT_NAME} /var/lib/${PROJECT_NAME}
+ExecStartPre=/bin/chown ${SYSTEM_USER}:adm /var/log/${PROJECT_NAME}
 ExecStart=${SCRIPTNAME} systemd-start
 $SYSTEMD_RESTART
 LimitNOFILE=65535
