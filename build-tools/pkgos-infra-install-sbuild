@@ -84,6 +84,144 @@ enable_init_start () {
     sudo rm -f /usr/sbin/policy-rc.d
 }
 
+# This gives the closest mirror in the current cloud where we're building
+calculate_nodepool_mirror_host () {
+    if ! [ -r /etc/nodepool/provider ] ; then
+        echo "Could not read /etc/nodepool/provider"
+        exit 1
+    else
+        . /etc/nodepool/provider
+        NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-mirror.$NODEPOOL_REGION.$NODEPOOL_CLOUD.openstack.org}
+        NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
+    fi
+}
+
+# This is needed to install the backported version of dpkg
+add_bpo_repo_to_host () {
+    calculate_nodepool_mirror_host
+
+    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
+deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
+" >/tmp/jessie-newton-backports.list
+    sudo cp /tmp/jessie-newton-backports.list /etc/apt/sources.list.d/jessie-newton-backports.list
+
+    # Add the repo key
+    echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1
+
+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
+=vKaS
+-----END PGP PUBLIC KEY BLOCK-----" >/tmp/repo-key.gpg
+    sudo apt-key add /tmp/repo-key.gpg
+    rm /tmp/repo-key.gpg
+    sudo apt-get update
+}
+
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
     sudo apt-get update
@@ -95,7 +233,8 @@ install_all_software () {
     # Jessie needs sbuild from jessie-backports, because it has the
     # $clean_source = 0 option
     if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
-        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild
+        add_bpo_repo_to_host
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild dpkg
     # This code thinks anything else than jessie is higher version of sbuild
     else
         DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends sbuild
