@@ -8,3 +8,4 @@ misc/pkgos*				/usr/bin
 pkgos.make				/usr/share/openstack-pkg-tools
 pkgos_func				/usr/share/openstack-pkg-tools
 pkgos_insert_include			/usr/share/openstack-pkg-tools
+misc/libdpkg-perl-gitreview.patch	/usr/share/openstack-pkg-tools
