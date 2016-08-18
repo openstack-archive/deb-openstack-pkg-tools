@@ -84,6 +84,29 @@ enable_init_start () {
     sudo rm -f /usr/sbin/policy-rc.d
 }
 
+# This gives the closest mirror in the current cloud where we're building
+calculate_nodepool_mirror_host () {
+    if ! [ -r /etc/nodepool/provider ] ; then
+        echo "Could not read /etc/nodepool/provider"
+        exit 1
+    else
+        . /etc/nodepool/provider
+        NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-mirror.$NODEPOOL_REGION.$NODEPOOL_CLOUD.openstack.org}
+        NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
+    fi
+}
+
+# This is needed to install the backported version of dpkg
+add_bpo_repo_to_host () {
+    calculate_nodepool_mirror_host
+
+    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
+deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
+" >/tmp/jessie-newton-backports.list
+    sudo cp /tmp/jessie-newton-backports.list /etc/apt/sources.list.d/jessie-newton-backports.list
+    sudo apt-get update
+}
+
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
     sudo apt-get update
@@ -95,7 +118,8 @@ install_all_software () {
     # Jessie needs sbuild from jessie-backports, because it has the
     # $clean_source = 0 option
     if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
-        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild
+        add_bpo_repo_to_host
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild dpkg
     # This code thinks anything else than jessie is higher version of sbuild
     else
         DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends sbuild
