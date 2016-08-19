@@ -464,8 +464,11 @@ pkgos_read_admin_creds () {
 				pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_url
 				if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
 					NO_PROTO=${RET#http://}
+					if [ ${NO_PROTO} = ${RET} ] ; then
+						NO_PROTO=${RET#https://}
+					fi
 					BEFORE_PORT=$(echo ${NO_PROTO} | cut -d":" -f1)
-					if [ -z "${BEFORE_PORT}" ] ; then
+					if [ -n "${BEFORE_PORT}" ] ; then
 						db_set ${READ_ADMIN_CRED_PKG_NAME}/auth-host ${BEFORE_PORT}
 					fi
 				fi
@@ -484,7 +487,7 @@ pkgos_read_admin_creds () {
 
 # To be used in: postinst
 pkgos_write_admin_creds () {
-	local WRITE_CRED_CONF_FNAME WRITE_CRED_PKG_NAME WRITE_CRED_SECTION NO_PROTO AFTER_PORT WRITE_CRED_URL
+	local WRITE_CRED_CONF_FNAME WRITE_CRED_PKG_NAME WRITE_CRED_SECTION NO_PROTO AFTER_PORT WRITE_CRED_URL WRITE_CRED_PROTO
 	WRITE_CRED_CONF_FNAME=${1}
 	WRITE_CRED_SECTION=${2}
 	WRITE_CRED_PKG_NAME=${3}
@@ -497,9 +500,19 @@ pkgos_write_admin_creds () {
 		# This is needed for l3_agent.ini
 		if grep -q auth_url ${WRITE_CRED_CONF_FNAME} ; then
 			pkgos_inifile get ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_url
-			NO_PROTO=${RET#http://}
-			AFTER_PORT=$(echo ${NO_PROTO} | cut -d":" -f2)
-			WRITE_CRED_URL="http://${WRITE_CRED_AUTH_HOST}:${AFTER_PORT}"
+			if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+				NO_PROTO=${RET#http://}
+				WRITE_CRED_PROTO="http"
+				if [ ${NO_PROTO} = ${RET} ] ; then
+					WRITE_CRED_PROTO="https"
+					NO_PROTO=${RET#https://}
+				fi
+				AFTER_PORT=$(echo ${NO_PROTO} | cut -d":" -f2)
+			else
+				WRITE_CRED_PROTO="http"
+				AFTER_PORT="35357/"
+			fi
+			WRITE_CRED_URL="${WRITE_CRED_PROTO}://${WRITE_CRED_AUTH_HOST}:${AFTER_PORT}"
 			pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_url ${WRITE_CRED_URL}
 		else
 			echo "Couldn't find either auth_host or auth_url :("
