@@ -95,7 +95,7 @@ build_backport_package () {
     # Build the package with gbp buildpackage
     echo "===> Building with gbp buildpackage from ${WORKSPACE}"
     if [ "${IS_NATIVE}" = "no" ] ; then
-        SAFLAG=" -sa"
+        SAFLAG=" --force-orig-source"
     else
         SAFLAG=""
     fi
