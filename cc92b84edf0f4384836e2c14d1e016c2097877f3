@@ -1,0 +1,8 @@
+Code-Review+2: Thomas Goirand <thomas@goirand.fr>
+Workflow+1: Thomas Goirand <thomas@goirand.fr>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 22 Aug 2016 09:02:35 +0000
+Reviewed-on: https://review.openstack.org/358483
+Project: openstack/deb-openstack-pkg-tools
+Branch: refs/heads/debian/newton
