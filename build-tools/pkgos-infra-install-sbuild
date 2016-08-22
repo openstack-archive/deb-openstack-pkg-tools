@@ -61,8 +61,21 @@ fi
 # End parse parameters #
 ########################
 
+# This gives the closest mirror in the current cloud where we're building
+calculate_nodepool_mirror_host () {
+    if ! [ -r /etc/nodepool/provider ] ; then
+        echo "Could not read /etc/nodepool/provider"
+        exit 1
+    else
+        . /etc/nodepool/provider
+        NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-mirror.$NODEPOOL_REGION.$NODEPOOL_CLOUD.openstack.org}
+        NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
+    fi
+}
+
 # Some configuration stuff
-CLOSEST_DEBIAN_MIRROR=http://httpredir.debian.org/debian
+calculate_nodepool_mirror_host
+CLOSEST_DEBIAN_MIRROR=http://${NODEPOOL_MIRROR_HOST}/debian
 
 PATH=/usr/bin:/usr/sbin:/bin:/sbin
 APT="DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends"
@@ -84,17 +97,6 @@ enable_init_start () {
     sudo rm -f /usr/sbin/policy-rc.d
 }
 
-# This gives the closest mirror in the current cloud where we're building
-calculate_nodepool_mirror_host () {
-    if ! [ -r /etc/nodepool/provider ] ; then
-        echo "Could not read /etc/nodepool/provider"
-        exit 1
-    else
-        . /etc/nodepool/provider
-        NODEPOOL_MIRROR_HOST=${NODEPOOL_MIRROR_HOST:-mirror.$NODEPOOL_REGION.$NODEPOOL_CLOUD.openstack.org}
-        NODEPOOL_MIRROR_HOST=$(echo $NODEPOOL_MIRROR_HOST|tr '[:upper:]' '[:lower:]')
-    fi
-}
 
 # This is needed to install the backported version of dpkg
 add_bpo_repo_to_host () {
