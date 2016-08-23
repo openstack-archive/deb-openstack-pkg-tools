@@ -310,12 +310,13 @@ configure_sbuild () {
     echo "===> Mounting /var/lib/schroot/union/{overlay,underlay} using tmpfs to speed-up build"
     TMPFILE=$(mktemp)
     cp /etc/fstab ${TMPFILE}
-    echo "tmpfs           /var/lib/schroot/union/overlay        tmpfs defaults        0       0
-tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0       0" >>${TMPFILE}
-    sudo cp ${TMPFILE} /etc/fstab
+#    echo "tmpfs           /var/lib/schroot/union/overlay        tmpfs defaults        0       0
+#tmpfs           /var/lib/schroot/union/underlay        tmpfs defaults        0       0" >>${TMPFILE}
+#    sudo cp ${TMPFILE} /etc/fstab
+#    rm ${TMPFILE}
+#    sudo mount /var/lib/schroot/union/overlay
+#    sudo mount /var/lib/schroot/union/underlay
     rm ${TMPFILE}
-    sudo mount /var/lib/schroot/union/overlay
-    sudo mount /var/lib/schroot/union/underlay
 
     echo "===> Fixing-up newly created schroot's chroot config and /etc/git-buildpackage/gbp.conf"
     # Make sure git-buildpackage is using sbuild
