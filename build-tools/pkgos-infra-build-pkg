@@ -66,6 +66,7 @@ create_orig_tarball () {
                     GENORIG_DEBRULES_TARGET=gen-orig-bz2
                 fi
             fi
+            ./debian/rules fetch-upstream-remote
             ./debian/rules ${GENORIG_DEBRULES_TARGET}
         fi
     fi
