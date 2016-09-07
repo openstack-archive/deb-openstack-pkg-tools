@@ -62,7 +62,7 @@ fi
 ########################
 
 # Some configuration stuff
-CLOSEST_DEBIAN_MIRROR=http://httpredir.debian.org/debian
+CLOSEST_DEBIAN_MIRROR=http://ftp.fr.debian.org/debian
 
 PATH=/usr/bin:/usr/sbin:/bin:/sbin
 APT="DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends"
