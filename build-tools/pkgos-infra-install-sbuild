@@ -225,7 +225,7 @@ Fay9Hm4PGbv1efScdmAXCEwE0K8EuHcNRsKFfy+l
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
     sudo apt-get update
-    sudo ${APT} git-buildpackage debhelper eatmydata build-essential \
+    sudo ${APT} git-buildpackage eatmydata build-essential \
         python-setuptools fakeroot python3-all python-all \
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
         dh-python dh-systemd python-sphinx sudo debootstrap \
@@ -302,7 +302,7 @@ configure_sbuild () {
     echo "===> Creating sbuild's schroot chroot using a directory backend (ie: not tarball)"
     # Create the actual schroot env
     if ! [ -e /var/lib/sbuild/${SBUILD_CHROOT_NAME} ] ; then
-        sudo sbuild-createchroot ${SBUILD_CHROOT_DISTRO_NAME} /var/lib/sbuild/${SBUILD_CHROOT_DISTRO_NAME} ${CLOSEST_DEBIAN_MIRROR}
+        sudo sbuild-createchroot --include=debhelper ${SBUILD_CHROOT_DISTRO_NAME} /var/lib/sbuild/${SBUILD_CHROOT_DISTRO_NAME} ${CLOSEST_DEBIAN_MIRROR}
     fi
 
     # Let's use a RAMDISK for sbuild chroot to build packages:
