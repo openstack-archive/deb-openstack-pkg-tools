@@ -229,7 +229,7 @@ install_all_software () {
         python-setuptools fakeroot python3-all python-all \
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
         dh-python dh-systemd python-sphinx sudo debootstrap \
-        openstack-pkg-tools lintian lsb-release gem2deb gnupg haveged
+        openstack-pkg-tools lintian lsb-release gnupg haveged
     # Jessie needs sbuild from jessie-backports, because it has the
     # $clean_source = 0 option
     if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
