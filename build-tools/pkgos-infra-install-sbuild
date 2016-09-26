@@ -225,7 +225,7 @@ Fay9Hm4PGbv1efScdmAXCEwE0K8EuHcNRsKFfy+l
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
     sudo apt-get update
-    sudo ${APT} git-buildpackage debhelper eatmydata build-essential \
+    sudo ${APT} git-buildpackage eatmydata build-essential \
         python-setuptools fakeroot python3-all python-all \
         python3-setuptools pristine-tar dh-autoreconf ssl-cert \
         dh-python dh-systemd python-sphinx sudo debootstrap \
@@ -365,6 +365,7 @@ configure_sbuild () {
     # Configure ~/.sbuildrc to use our new sbuild chroot
     GPG_KEY_ID=$(su jenkins -c "gpg --list-keys ${BUILDER_SYS_USERNAME}" | grep ^pub | awk '{print $2}' | cut -d/ -f2)
     DOT_SBUILDRC_PATH=${BUILDER_HOMEDIR}/.sbuildrc
+    wget "http://ftp.debian.org/debian/pool/main/d/dh-autoreconf/dh-autoreconf_12~bpo8+1_all.deb" -O /tmp
     if ! [ -r "${DOT_SBUILDRC_PATH}" ] ; then
         echo "\$build_arch_all = 1;
 \$build_source = 1;
@@ -385,6 +386,8 @@ configure_sbuild () {
 #\$pgp_options = '-us -uc';
 
 \$key_id = '${GPG_KEY_ID}';
+
+\$extra_packages = ['/tmp/dh-autoreconf_12~bpo8+1_all.deb'];
 
 # This is for perl, just leave it...
 1;
