@@ -1,8 +1,13 @@
 openstack-pkg-tools (53) UNRELEASED; urgency=medium
 
+  [ Thomas Goirand ]
   * Added prerm and postrm functions to handle dbconfig-common db removal.
   * Fixed log folder adm permissions.
   * pkgos-alioth-new-git is now using rsync to upload, so it can resume.
+
+  [ Ondřej Nový ]
+  * d/s/options: extend-diff-ignore of .gitreview
+  * d/control: Using OpenStack's Gerrit as VCS URLs.
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 30 Jun 2016 13:32:09 +0200
 
