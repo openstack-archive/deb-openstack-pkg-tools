@@ -227,7 +227,21 @@ install_all_software () {
     sudo apt-get update
     sudo ${APT} git-buildpackage eatmydata build-essential \
         fakeroot pristine-tar ssl-cert sudo debootstrap \
-        openstack-pkg-tools lintian lsb-release gnupg haveged
+        openstack-pkg-tools lsb-release gnupg haveged
+
+    # Jessie needs lintian from jessie-backports, because we are using
+    # newer debhelper. New lintian prevents errors like
+    # postinst-must-call-ldconfig
+    if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
+        add_bpo_repo_to_host
+
+        # Use lintian from backports
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports lintian
+    # This code thinks anything else than jessie is higher version of lintian
+    else
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends lintian
+    fi
+
     # Jessie needs sbuild from jessie-backports, because it has the
     # $clean_source = 0 option
     if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
