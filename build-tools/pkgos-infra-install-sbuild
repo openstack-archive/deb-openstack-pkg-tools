@@ -384,6 +384,10 @@ configure_sbuild () {
 
 \$key_id = '${GPG_KEY_ID}';
 
+# Needed for example for python-glance-store, which as in
+# build-depends-indep: python3-all (>= 3.5) | python3-enum34
+\$resolve_alternatives = 1;
+
 # This is for perl, just leave it...
 1;
 " >${DOT_SBUILDRC_PATH}
