@@ -227,7 +227,8 @@ install_all_software () {
     sudo apt-get update
     sudo ${APT} git-buildpackage eatmydata build-essential \
         fakeroot pristine-tar ssl-cert sudo debootstrap \
-        openstack-pkg-tools lintian lsb-release gnupg haveged
+        openstack-pkg-tools lintian lsb-release gnupg haveged \
+        piuparts
     # Jessie needs sbuild from jessie-backports, because it has the
     # $clean_source = 0 option
     if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
@@ -387,6 +388,14 @@ configure_sbuild () {
 # Needed for example for python-glance-store, which as in
 # build-depends-indep: python3-all (>= 3.5) | python3-enum34
 \$resolve_alternatives = 1;
+
+# Enable piuparts
+\$run_piuparts = 1;
+\$piuparts_opts = [
+    '-e', '/var/lib/sbuild/${SBUILD_CHROOT_NAME}',
+    '--keep-sources-list', '--warn-on-others', '--no-upgrade-test',
+    '--skip-logrotatefiles-test'
+];
 
 # This is for perl, just leave it...
 1;
