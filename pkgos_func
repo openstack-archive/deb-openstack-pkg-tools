@@ -423,7 +423,7 @@ pkgos_dbc_postinst () {
 					SQL_CONNECTION="mysql+pymysql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
 					# Set the DB as UTF8
 					Q="ALTER DATABASE \`${dbc_dbname}\` CHARACTER SET utf8 COLLATE utf8_unicode_ci"
-					pkgos_mysql_query ${dbc_dbuser} ${dbc_dbpass} ${dbc_dbserver:-localhost} "${dbport}" ${dbc_dbname} "${Q}"
+					pkgos_mysql_query ${dbc_dbuser} ${dbc_dbpass} ${dbc_dbserver:-localhost} "${dbc_dbport}" ${dbc_dbname} "${Q}"
 					;;
 				postgresql*|pgsql)
 					if [ -n "$dbc_dbport" ] ; then
