@@ -1,9 +1,11 @@
-openstack-pkg-tools (53) UNRELEASED; urgency=medium
+openstack-pkg-tools (53) unstable; urgency=medium
 
   [ Thomas Goirand ]
   * Added prerm and postrm functions to handle dbconfig-common db removal.
   * Fixed log folder adm permissions.
   * pkgos-alioth-new-git is now using rsync to upload, so it can resume.
+  * Lots of improvements, including tooling for building packages within
+    OpenStack infrastructure.
 
   [ Ondřej Nový ]
   * d/s/options: extend-diff-ignore of .gitreview
