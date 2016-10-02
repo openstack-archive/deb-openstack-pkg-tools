@@ -224,6 +224,7 @@ Fay9Hm4PGbv1efScdmAXCEwE0K8EuHcNRsKFfy+l
 
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
+    sudo sed -i s/httpredir.debian.org/ftp.fr.debian.org/ /etc/apt/sources.list
     sudo apt-get update
     sudo ${APT} git-buildpackage eatmydata build-essential \
         fakeroot pristine-tar ssl-cert sudo debootstrap \

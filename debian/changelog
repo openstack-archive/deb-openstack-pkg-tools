@@ -1,3 +1,10 @@
+openstack-pkg-tools (54) UNRELEASED; urgency=medium
+
+  * build-tools/pkgos-infra-install-sbuild:
+    - Using ftp.fr.debian.org instead of httpredir.debian.org.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 02 Oct 2016 19:39:48 +0200
+
 openstack-pkg-tools (53) unstable; urgency=medium
 
   [ Thomas Goirand ]
