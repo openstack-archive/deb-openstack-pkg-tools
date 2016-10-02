@@ -62,7 +62,7 @@ fi
 ########################
 
 # Some configuration stuff
-CLOSEST_DEBIAN_MIRROR=http://ftp.fr.debian.org/debian
+CLOSEST_DEBIAN_MIRROR=http://ftp.us.debian.org/debian
 
 PATH=/usr/bin:/usr/sbin:/bin:/sbin
 APT="DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends"
@@ -224,6 +224,7 @@ Fay9Hm4PGbv1efScdmAXCEwE0K8EuHcNRsKFfy+l
 
 install_all_software () {
     echo "===> Installing required packages to run sbuild"
+    sudo sed -i s/httpredir.debian.org/ftp.us.debian.org/ /etc/apt/sources.list
     sudo apt-get update
     sudo ${APT} git-buildpackage eatmydata build-essential \
         fakeroot pristine-tar ssl-cert sudo debootstrap \
