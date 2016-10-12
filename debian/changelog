@@ -2,6 +2,9 @@ openstack-pkg-tools (54) UNRELEASED; urgency=medium
 
   * build-tools/pkgos-infra-install-sbuild:
     - Using ftp.fr.debian.org instead of httpredir.debian.org.
+  * Add misc/libsbuild-perl-ChrootSetup.pm-hotfix.patch to fix not-supported
+    option of gnupg that sbuild from jessie-backport is using. Hopefully, this
+    will be fixed in sbuild from jessie-bpo.
 
  -- Thomas Goirand <zigo@debian.org>  Sun, 02 Oct 2016 19:39:48 +0200
 
