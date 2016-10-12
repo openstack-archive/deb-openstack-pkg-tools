@@ -1,0 +1,11 @@
+--- a/ChrootSetup.pm	2016-10-12 21:03:05.357702250 +0000
++++ b/ChrootSetup.pm	2016-10-12 21:03:26.929579131 +0000
+@@ -274,7 +274,7 @@
+ 	return $?
+     }
+ 
+-    my @command = ('gpg', '--no-options', '--pinentry-mode', 'loopback', '--passphrase-file', '/dev/null', '--no-default-keyring', '--batch', '--gen-key',
++    my @command = ('gpg', '--no-options', '--passphrase-file', '/dev/null', '--no-default-keyring', '--batch', '--gen-key',
+                    $tmpfilename);
+     $host->run_command(
+         { COMMAND => \@command,
