@@ -242,30 +242,30 @@ install_all_software () {
     else
         DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends lintian
     fi
-
-    # Jessie needs sbuild from jessie-backports, because it has the
-    # $clean_source = 0 option
-    if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
-        add_bpo_repo_to_host
-
-        # Use sbuild from backports, as we need the $clean_source = 0 option
-        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild
-
-        # Patch libdpkg-perl so that it ignores .gitreview files
-        # This is a hack which should be replaced by a newer version of dpkg
-        THISDIR=$(pwd)
-        cd /usr/share/perl5/Dpkg/Source
-        if [ -e /usr/share/openstack-pkg-tools/libdpkg-perl-gitreview.patch ] ; then
-            patch -p1 </usr/share/openstack-pkg-tools/libdpkg-perl-gitreview.patch
-        else
-            patch -p1 <${THISDIR}/misc/libdpkg-perl-gitreview.patch
-        fi
-        cd ${THISDIR}
-
-    # This code thinks anything else than jessie is higher version of sbuild
-    else
+#
+#    # Jessie needs sbuild from jessie-backports, because it has the
+#    # $clean_source = 0 option
+#    if [ "${HOST_DISTRO_NAME}" = "jessie" ] ; then
+#        add_bpo_repo_to_host
+#
+#        # Use sbuild from backports, as we need the $clean_source = 0 option
+#        DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends -t jessie-backports sbuild
+#
+#        # Patch libdpkg-perl so that it ignores .gitreview files
+#        # This is a hack which should be replaced by a newer version of dpkg
+#        THISDIR=$(pwd)
+#        cd /usr/share/perl5/Dpkg/Source
+#        if [ -e /usr/share/openstack-pkg-tools/libdpkg-perl-gitreview.patch ] ; then
+#            patch -p1 </usr/share/openstack-pkg-tools/libdpkg-perl-gitreview.patch
+#        else
+#            patch -p1 <${THISDIR}/misc/libdpkg-perl-gitreview.patch
+#        fi
+#        cd ${THISDIR}
+#
+#    # This code thinks anything else than jessie is higher version of sbuild
+#    else
         DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends sbuild
-    fi
+#    fi
 }
 
 configure_dotgitconfig () {
