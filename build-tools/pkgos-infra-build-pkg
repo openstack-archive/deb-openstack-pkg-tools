@@ -109,7 +109,7 @@ build_backport_package () {
 }
 
 lintian_test_the_package () {
-    echo "===> Starting Lintian check"
+    echo "===> Starting Lintian check 2.1"
     lintian -I -E --pedantic --suppress-tags bad-distribution-in-changes-file --suppress-tags privacy-breach-uses-embedded-file ../build-area/*.changes
 }
 

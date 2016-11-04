@@ -264,14 +264,14 @@ install_all_software () {
 
 	# Patch libsbuild-perl (jessie bpo) so that it doesn't use the --pinentry-mode
 	# option of gnupg which isn't available in Jessie
-	THISDIR=$(pwd)
-	cd /usr/share/perl5/Sbuild
-	if [ -e /usr/share/openstack-pkg-tools/libsbuild-perl-ChrootSetup.pm-hotfix.patch ] ; then
-		patch -p1 </usr/share/openstack-pkg-tools/libsbuild-perl-ChrootSetup.pm-hotfix.patch
-	else
-		patch -p1 <${THISDIR}/misc/libsbuild-perl-ChrootSetup.pm-hotfix.patch
-	fi
-	cd ${THISDIR}
+#	THISDIR=$(pwd)
+#	cd /usr/share/perl5/Sbuild
+#	if [ -e /usr/share/openstack-pkg-tools/libsbuild-perl-ChrootSetup.pm-hotfix.patch ] ; then
+#		patch -p1 </usr/share/openstack-pkg-tools/libsbuild-perl-ChrootSetup.pm-hotfix.patch
+#	else
+#		patch -p1 <${THISDIR}/misc/libsbuild-perl-ChrootSetup.pm-hotfix.patch
+#	fi
+#	cd ${THISDIR}
 
     # This code thinks anything else than jessie is higher version of sbuild
     else
