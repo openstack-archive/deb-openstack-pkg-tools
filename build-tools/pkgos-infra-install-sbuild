@@ -224,7 +224,7 @@ Fay9Hm4PGbv1efScdmAXCEwE0K8EuHcNRsKFfy+l
 
 install_all_software () {
     local PKGOS_INFRA_BUILD_PKG_PATH
-    PKGOS_INFRA_BUILD_PKG_PATH=/home/jenkins/workspace/pkgdeb-build-openstack-pkg-tools/build-tools/pkgos-infra-build-pkg
+    PKGOS_INFRA_BUILD_PKG_PATH=${GITREPO_ROOT}/build-tools/pkgos-infra-build-pkg
 
     echo "===> Installing required packages to run sbuild"
     sudo sed -i s/httpredir.debian.org/ftp.us.debian.org/ /etc/apt/sources.list
