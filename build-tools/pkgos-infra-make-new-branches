@@ -1,0 +1,71 @@
+#!/bin/sh
+
+set -e
+#set -x
+
+function setup_temp_space {
+	MYTMPDIR=`mktemp -d _tmp-${1}-XXX`
+	mkdir -p "$MYTMPDIR"
+	trap _cleanup_tmp EXIT
+	cd "$MYTMPDIR"
+	# NOTE(dhellmann): On some platforms mktemp returns a short name
+	# instead of a full path, so expand the full path by looking at
+	# where we ended up after the cd operation.
+	MYTMPDIR="$(pwd)"
+}
+
+wget_package_list_from_cgit () {
+	local MCGIT_HTML OS_CGIT_URL
+	MCGIT_HTML=${1}
+
+	OS_CGIT_URL=http://git.openstack.org/cgit/openstack/deb-
+
+	echo -n "===> wget OS_CGIT_URL=http://git.openstack.org/cgit/openstack/deb- ... "
+	wget -q ${OS_CGIT_URL} -O ${MCGIT_HTML}
+	echo "done"
+}
+get_repo_list_from_html () {
+	local MCGIT_HTML MREPO_LIST SEARCH_PATTERN REMOVE_THIS
+	MCGIT_HTML=${1}
+	MREPO_LIST=${2}
+
+	SEARCH_PATTERN="<tr><td class='sublevel-repo'><a title='openstack/deb-"
+	REMOVE_THIS="<tr class='nohover'><td colspan='4' class='reposection'>openstack</td></tr>"
+
+	for i in $(cat ${MCGIT_HTML} | sed s'#'"${REMOVE_THIS}"'##' | grep "${SEARCH_PATTERN}" | sed s'#'"${SEARCH_PATTERN}"'#deb-#' | cut -d"'" -f1) ; do
+		echo $i >>${MREPO_LIST}
+	done
+}
+
+make_new_repo_branch () {
+	local REPO FROM_RELEASE_NAME TO_RELEASE_NAME
+	REPO=$1
+	FROM_RELEASE_NAME=$2
+	TO_RELEASE_NAME=$3
+
+	JSON='{"revision": "'${FROM_RELEASE_NAME}'" }'
+
+	curl -H 'Content-Type: application/json' -X PUT -d "${JSON}" https://review-dev.openstack.org/projects/${REPO}/branches/${TO_RELEASE_NAME}
+
+	PROJECT=$(basename $REPO)
+	LPROJECT="$PROJECT"
+
+}
+
+main () {
+	local RELASE_NAME_FROM RELEASE_NAME_TO
+	RELASE_NAME_FROM=$1
+	RELEASE_NAME_TO=$2
+	CGIT_HTML=$(mktemp)
+	REPO_LIST=$(mktemp)
+	wget_package_list_from_cgit ${CGIT_HTML}
+	get_repo_list_from_html ${CGIT_HTML} ${REPO_LIST}
+
+	for i in $(cat ${REPO_LIST}) ; do
+		echo "Branching $i from debian/${RELASE_NAME_FROM} to debian/${RELEASE_NAME_TO} ..."
+		make_new_repo_branch $i debian/${RELASE_NAME_FROM} debian/${RELEASE_NAME_TO}
+	done
+	rm ${CGIT_HTML} ${REPO_LIST}
+}
+
+main $@
