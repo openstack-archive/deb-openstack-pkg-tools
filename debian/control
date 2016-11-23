@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>,
            Ondřej Nový <novy@ondrej.org>,
-Build-Depends: debhelper (>= 9),
+Build-Depends: debhelper (>= 10),
 Standards-Version: 3.9.8
 Vcs-Browser: https://git.openstack.org/cgit/openstack/deb-openstack-pkg-tools?h=debian%2Fnewton
 Vcs-Git: https://git.openstack.org/openstack/deb-openstack-pkg-tools -b debian/newton
