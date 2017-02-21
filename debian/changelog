@@ -1,3 +1,9 @@
+openstack-pkg-tools (53~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Ondřej Nový <onovy@debian.org>  Tue, 21 Feb 2017 09:33:06 +0100
+
 openstack-pkg-tools (53) unstable; urgency=medium
 
   [ Thomas Goirand ]
