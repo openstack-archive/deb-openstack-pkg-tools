@@ -12,7 +12,7 @@
 set -e
 set -x
 
-OSTACK_RELEASE=newton
+OSTACK_RELEASE=ocata
 BUILDER_SYS_USERNAME="jenkins"
 BUILDER_HOMEDIR=/home/jenkins
 GITREPO_ROOT=${WORKSPACE}
@@ -100,10 +100,10 @@ calculate_nodepool_mirror_host () {
 add_bpo_repo_to_host () {
     calculate_nodepool_mirror_host
 
-    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-" >/tmp/jessie-newton-backports.list
-    sudo cp /tmp/jessie-newton-backports.list /etc/apt/sources.list.d/jessie-newton-backports.list
+    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-ocata-backports main
+deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-ocata-backports main
+" >/tmp/jessie-ocata-backports.list
+    sudo cp /tmp/jessie-ocata-backports.list /etc/apt/sources.list.d/jessie-ocata-backports.list
 
     # Add the repo key
     echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -448,14 +448,14 @@ configure_sbuild () {
     fi
 
     # Add our repos to the sbuild chroot
-    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-" >/tmp/jessie-newton-backports.list
-    sudo cp /tmp/jessie-newton-backports.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-newton-backports.list
-    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton main
-deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton main
-" >/tmp/jessie-newton.list
-    sudo cp /tmp/jessie-newton.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-newton.list
+    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-ocata-backports main
+deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-ocata-backports main
+" >/tmp/jessie-ocata-backports.list
+    sudo cp /tmp/jessie-ocata-backports.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-ocata-backports.list
+    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-ocata main
+deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-ocata main
+" >/tmp/jessie-ocata.list
+    sudo cp /tmp/jessie-ocata.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-ocata.list
     # Add the repo key
     echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: GPGTools - https://gpgtools.org

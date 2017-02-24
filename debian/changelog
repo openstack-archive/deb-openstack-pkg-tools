@@ -1,3 +1,9 @@
+openstack-pkg-tools (55) UNRELEASED; urgency=medium
+
+  * Update for Ocata OpenStack release.
+
+ -- Allison Randal <allison@lohutok.net>  Thu, 23 Feb 2017 20:37:30 -0500
+
 openstack-pkg-tools (54) UNRELEASED; urgency=medium
 
   [ Thomas Goirand ]
