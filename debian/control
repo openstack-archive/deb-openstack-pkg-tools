@@ -6,8 +6,8 @@ Uploaders: Thomas Goirand <zigo@debian.org>,
            Ondřej Nový <novy@ondrej.org>,
 Build-Depends: debhelper (>= 10),
 Standards-Version: 3.9.8
-Vcs-Browser: https://git.openstack.org/cgit/openstack/deb-openstack-pkg-tools?h=debian%2Fnewton
-Vcs-Git: https://git.openstack.org/openstack/deb-openstack-pkg-tools -b debian/newton
+Vcs-Browser: https://git.openstack.org/cgit/openstack/deb-openstack-pkg-tools?h=debian%2Focata
+Vcs-Git: https://git.openstack.org/openstack/deb-openstack-pkg-tools -b debian/ocata
 
 Package: openstack-pkg-tools
 Architecture: all

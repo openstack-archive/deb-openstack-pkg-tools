@@ -12,7 +12,7 @@
 set -e
 set -x
 
-OSTACK_RELEASE=newton
+OSTACK_RELEASE=ocata
 BUILDER_SYS_USERNAME="jenkins"
 BUILDER_HOMEDIR=/home/jenkins
 GITREPO_ROOT=${WORKSPACE}
