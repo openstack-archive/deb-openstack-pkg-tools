@@ -19,6 +19,7 @@ GITREPO_ROOT=${WORKSPACE}
 
 DISTRO_VENDOR=$(lsb_release --id -s | awk '{print tolower($0)}')
 HOST_DISTRO_NAME=$(lsb_release -c -s)
+DEFAULT_TARGET_BACKPORT=stretch
 
 ####################
 # Parse parameters #
@@ -46,11 +47,11 @@ for i in $@ ; do
 done
 
 if [ -z "${SBUILD_CHROOT_NAME}" ] ; then
-    SBUILD_CHROOT_NAME="${HOST_DISTRO_NAME}-${OSTACK_RELEASE}"
+    SBUILD_CHROOT_NAME="${DEFAULT_TARGET_BACKPORT}-${OSTACK_RELEASE}"
 fi
 
 if [ -z "${SBUILD_CHROOT_DISTRO_NAME}" ] ; then
-    SBUILD_CHROOT_DISTRO_NAME=${HOST_DISTRO_NAME}
+    SBUILD_CHROOT_DISTRO_NAME=${DEFAULT_TARGET_BACKPORT}
 fi
 
 if [ ${DO_EXIT} = "yes" ] ; then
@@ -100,10 +101,12 @@ calculate_nodepool_mirror_host () {
 add_bpo_repo_to_host () {
     calculate_nodepool_mirror_host
 
-    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-" >/tmp/jessie-newton-backports.list
-    sudo cp /tmp/jessie-newton-backports.list /etc/apt/sources.list.d/jessie-newton-backports.list
+# disabled as currently not available yet #
+###########################################
+#    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack ${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE}-backports main
+#deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack ${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE}-backports main
+#" >/tmp/${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE}-backports.list
+#    sudo cp /tmp/${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE}-backports.list /etc/apt/sources.list.d/${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE}-backports.list
 
     # Add the repo key
     echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -448,14 +451,17 @@ configure_sbuild () {
     fi
 
     # Add our repos to the sbuild chroot
-    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
-" >/tmp/jessie-newton-backports.list
-    sudo cp /tmp/jessie-newton-backports.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-newton-backports.list
-    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton main
-deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton main
-" >/tmp/jessie-newton.list
-    sudo cp /tmp/jessie-newton.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-newton.list
+#######################################################
+# Temporarily disabled as not available at this point #
+#######################################################
+#    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
+#deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack jessie-newton-backports main
+#" >/tmp/jessie-newton-backports.list
+#    sudo cp /tmp/jessie-newton-backports.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/jessie-newton-backports.list
+    echo "deb http://${NODEPOOL_MIRROR_HOST}/debian-openstack ${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE} main
+deb-src http://${NODEPOOL_MIRROR_HOST}/debian-openstack ${SBUILD_CHROOT_DISTRO_NAME}-${OSTACK_RELEASE} main
+" >/tmp/debian-openstack.list
+    sudo cp /tmp/debian-openstack.list /var/lib/sbuild/${SBUILD_CHROOT_NAME}/etc/apt/sources.list.d/debian-openstack.list
     # Add the repo key
     echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: GPGTools - https://gpgtools.org
