@@ -644,7 +644,7 @@ pkgos_register_endpoint_config () {
 
 		db_get ${REG_ENDP_PKG_NAME}/endpoint-ip || true
 		if [ -z "${RET}" ] ; then
-			DEFROUTE_IF=`LC_ALL=C /sbin/route | grep default |awk -- '{ print $8 }'`
+			DEFROUTE_IF=`LC_ALL=C ip -4 -o route show 0/0 | sed -e 's/.* dev \([^ ]\+\).*/\1/'`
 			DEFROUTE_IP=`LC_ALL=C ip addr show "${DEFROUTE_IF}" | grep inet | head -n 1 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'`
 			if [ -n "${DEFROUTE_IP}" ] ; then
 				db_set ${REG_ENDP_PKG_NAME}/endpoint-ip ${DEFROUTE_IP}

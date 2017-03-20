@@ -15,6 +15,7 @@ openstack-pkg-tools (54) UNRELEASED; urgency=medium
 
   [ Ondřej Nový ]
   * Bumped debhelper compat version to 10
+  * Don't require /sbin/route from net-tools package
 
  -- Thomas Goirand <zigo@debian.org>  Sun, 02 Oct 2016 19:39:48 +0200
 
