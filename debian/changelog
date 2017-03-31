@@ -1,4 +1,4 @@
-openstack-pkg-tools (54) UNRELEASED; urgency=medium
+openstack-pkg-tools (55) UNRELEASED; urgency=medium
 
   [ Thomas Goirand ]
   * build-tools/pkgos-infra-install-sbuild:
@@ -11,6 +11,13 @@ openstack-pkg-tools (54) UNRELEASED; urgency=medium
   * Bumped debhelper compat version to 10
 
  -- Thomas Goirand <zigo@debian.org>  Sun, 02 Oct 2016 19:39:48 +0200
+
+openstack-pkg-tools (54) unstable; urgency=medium
+
+  * Do not use ip (from iproute2) and route (form net-tools) in config
+    scripts, as these aren't essential packages.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 31 Mar 2017 11:49:28 +0000
 
 openstack-pkg-tools (53) unstable; urgency=medium
 
