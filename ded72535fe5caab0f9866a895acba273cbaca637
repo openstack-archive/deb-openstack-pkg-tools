@@ -1,0 +1,9 @@
+Code-Review+1: David Rabel <rabel@b1-systems.de>
+Code-Review+2: Thomas Goirand <thomas@goirand.fr>
+Workflow+1: Thomas Goirand <thomas@goirand.fr>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 31 Mar 2017 12:29:13 +0000
+Reviewed-on: https://review.openstack.org/452178
+Project: openstack/deb-openstack-pkg-tools
+Branch: refs/heads/debian/newton
