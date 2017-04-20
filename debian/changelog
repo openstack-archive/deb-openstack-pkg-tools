@@ -9,6 +9,8 @@ openstack-pkg-tools (55) UNRELEASED; urgency=medium
 
   [ Ondřej Nový ]
   * Bumped debhelper compat version to 10
+  * build-tools/pkgos-infra-build-pkg:
+    - Reset branch if already exists
 
  -- Thomas Goirand <zigo@debian.org>  Sun, 02 Oct 2016 19:39:48 +0200
 

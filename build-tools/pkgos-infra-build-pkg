@@ -82,7 +82,7 @@ build_backport_package () {
     NUM_COMMITS_FROM_LAST_TAG=$(git rev-list --no-merges $(git describe --no-abbrev --candidates=1)..HEAD | wc -l)
     DEBFULLNAME="Jenkins" DEBEMAIL=jenkins@openstack.org dch --newversion ${DEB_VERS}+${NUM_COMMITS_FROM_LAST_TAG}${BPO_DISTRO_NUM} -b --allow-lower-version -m  "Backport rebuilt by Jenkins in OpenStack infra."
     git commit debian/changelog -m "Backport rebuilt by Jenkins in OpenStack infra."
-    git checkout -b ${PACKAGING_BRANCH_NAME}
+    git checkout -B ${PACKAGING_BRANCH_NAME}
 
     # Create ssh key
     if ! [ -e ~/.ssh/id_rsa ] ; then
