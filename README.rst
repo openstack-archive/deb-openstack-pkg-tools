@@ -1,2 +1,14 @@
-Please don't use the master branch for this package, but the branch
-corresponding to the OpenStack release you want to work on.
+This project is no longer maintained.
+
+The contents of this repository are still available in the Git
+source code management system. To see the contents of this
+repository before it reached its end of life, please check out the
+previous commit with "git checkout HEAD^1".
+
+For ongoing work on maintaining OpenStack packages in the Debian
+distribution, please see the Debian OpenStack packaging team at
+https://wiki.debian.org/OpenStack/.
+
+For any further questions, please email
+openstack-dev@lists.openstack.org or join #openstack-dev on
+Freenode.
